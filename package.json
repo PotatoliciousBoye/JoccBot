@@ -1,0 +1,11 @@
+{
+        "name": "JoccBotDev",
+        "version": "1.0.0",
+        "description": "CoupJocc bot for CoupJocc stuff",
+        "main": "bot.js",
+        "author": "Potatolicious",
+        "dependencies": {
+                "discord.js": "^11.5.1",
+                "winston": "^3.2.1"
+        }
+}
