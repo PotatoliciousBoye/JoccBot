@@ -184,6 +184,15 @@ function rollDices(rollSettings){
     return resultDices;
 }
 
+function CollectReactions(Message,timer)
+{
+    console.log('Collecting reactions for an image...');
+    const filter = (reaction,user) => true;
+    const collector = Message.createReactionCollector(filter, { time: timer });
+    collector.on('collect', r => console.log(`Collected reaction from: ${r.users.last().tag}`));
+    collector.on('end', collected => console.log(`Collected ${collected.size} reactions`));
+}
+
 const element = {
     mech:{
         get:'Mecha',
@@ -228,34 +237,28 @@ bot.on('message', msg => {
             break;
             case 'cute':
                 var attachment = new Discord.Attachment(getRandomImage('cute'));
-                msg.channel.send(attachment);
+                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
                 console.log('Request made by ' + msg.author.tag);
             break;
             case 'meme':
                 var attachment = new Discord.Attachment(getRandomImage('meme'));
-                msg.channel.send(attachment).then(Message => {
-                    const filter = (reaction) => reaction.emoji.name == ':ok_hand:'
-                    const collector = Message.createReactionCollector(filter, { time: 15000 });
-                    collector.on('collect', r => msg.channel.send(`Collected ${r.emoji.toString()}`));
-                    collector.on('end', collected => console.log(`Collected ${collected.size} items`));
-                  
-                });
+                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
                 console.log('Request made by ' + msg.author.tag);
             break;
             case 'nice':
                 var attachment = new Discord.Attachment(getRandomImage('nice'));
-                msg.channel.send(attachment);
+                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
                 console.log('Request made by ' + msg.author.tag);
             break;
             case 'manga':
                 var attachment = new Discord.Attachment(getRandomImage('manga'));
-                msg.channel.send(attachment);
+                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
                 console.log('Request made by ' + msg.author.tag);
             break;
             case 'lewd':
             case 'nsfw':
                 var attachment = new Discord.Attachment(getRandomImage('lewd'));
-                msg.channel.send(attachment);
+                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
                 console.log('Request made by ' + msg.author.tag);
             break;
 
