@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 var logger = require('winston');
-var auth = require('./auth.json');
+const auth = require('./auth.js');
 const fs = require('fs');
 const acceptedImageExtensions = ['jpg','png','jpeg','gif'];
 const imagePaths = {
@@ -258,7 +258,7 @@ bot.on('message', msg => {
             case 'lewd':
             case 'nsfw':
                 var attachment = new Discord.Attachment(getRandomImage('lewd'));
-                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
+                msg.channel.send(attachment);
                 console.log('Request made by ' + msg.author.tag);
             break;
 
@@ -313,4 +313,4 @@ bot.on('message', msg => {
     }
 });
 
-bot.login(auth.token);
+bot.login(auth.getToken());
