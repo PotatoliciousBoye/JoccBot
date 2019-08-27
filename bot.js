@@ -10,12 +10,14 @@ const imagePaths = {
     manga: './Images/Manga/',
     lewd: './Images/Lewd/'
 } 
-var cuteNames, memeNames, niceNames, mangaNames, lewdNames;
+var cuteNames = memeNames = niceNames = mangaNames = lewdNames = new Array();
 init();
 
 
 function init() {
-    
+    var responce = "", lengthTemp = 0;
+
+    lengthTemp = cuteNames.length;
     if(fs.existsSync(imagePaths.cute)){
     console.log('Reading '+imagePaths.cute);
     cuteNames = fs.readdirSync(imagePaths.cute,function(err,result){
@@ -23,15 +25,23 @@ function init() {
     });
     console.log(cuteNames.length + ' images loaded');
     }
+    if (cuteNames.length > lengthTemp) {
+        responce += ((cuteNames.length - lengthTemp) + "cute pics added.\n");
+    }
 
+    lengthTemp = memeNames.length;
     if(fs.existsSync(imagePaths.meme)){
-    console.log('Reading '+imagePaths.meme);
+    console.log('Reading '+ imagePaths.meme);
     memeNames = fs.readdirSync(imagePaths.meme,function(err,result){
         if(err) console.log('error', err);
     });
     console.log(memeNames.length + ' images loaded');
     }
+    if (memeNames.length > lengthTemp) {
+        responce += ((memeNames.length - lengthTemp) + "meme pics added.\n");
+    }
 
+    lengthTemp = niceNames.length;
     if(fs.existsSync(imagePaths.nice)){
     console.log('Reading '+imagePaths.nice);
     niceNames = fs.readdirSync(imagePaths.nice,function(err,result){
@@ -39,7 +49,11 @@ function init() {
     });
     console.log(niceNames.length + ' images loaded');
     }
+    if (niceNames.length > lengthTemp) {
+        responce += ((niceNames.length - lengthTemp) + "nice pics added.\n");
+    }
 
+    lengthTemp = mangaNames.length;
     if(fs.existsSync(imagePaths.manga)){
     console.log('Reading '+imagePaths.manga);
     mangaNames = fs.readdirSync(imagePaths.manga,function(err,result){
@@ -47,7 +61,11 @@ function init() {
     });
     console.log(mangaNames.length + ' images loaded');
     }
+    if (mangaNames.length > lengthTemp) {
+        responce += ((mangaNames.length - lengthTemp) + "manga pics added.\n");
+    }
 
+    lengthTemp = lewdNames.length;
     if(fs.existsSync(imagePaths.lewd)){
         console.log('Reading '+imagePaths.lewd);
         lewdNames = fs.readdirSync(imagePaths.lewd,function(err,result){
@@ -55,9 +73,14 @@ function init() {
         });
     console.log(lewdNames.length + ' images loaded');
     }
+    if (lewdNames.length > lengthTemp) {
+        responce += ((lewdNames.length - lengthTemp) + "lewd pics added.\n");
+    }
     
 
     console.log('!!!All images loaded!!!');
+
+    return responce;
 }
 
 function getRandomImage(imageType){
@@ -263,8 +286,8 @@ bot.on('message', msg => {
             break;
 
             case 'reinit':
-                init();
-                msg.channel.send('reinitialize complete.');
+                var responce = init();
+                msg.channel.send('reinitialize complete. \n' + responce);
                 break;
 
 
