@@ -15,7 +15,7 @@ init();
 
 
 function init() {
-    var responce = "", lengthTemp = 0;
+    var response = "", lengthTemp = 0;
 
     lengthTemp = cuteNames.length;
     if(fs.existsSync(imagePaths.cute)){
@@ -26,7 +26,7 @@ function init() {
     console.log(cuteNames.length + ' images loaded');
     }
     if (cuteNames.length > lengthTemp) {
-        responce += ((cuteNames.length - lengthTemp) + "cute pics added.\n");
+        response += ((cuteNames.length - lengthTemp) + "cute pics added.\n");
     }
 
     lengthTemp = memeNames.length;
@@ -38,7 +38,7 @@ function init() {
     console.log(memeNames.length + ' images loaded');
     }
     if (memeNames.length > lengthTemp) {
-        responce += ((memeNames.length - lengthTemp) + "meme pics added.\n");
+        response += ((memeNames.length - lengthTemp) + "meme pics added.\n");
     }
 
     lengthTemp = niceNames.length;
@@ -50,7 +50,7 @@ function init() {
     console.log(niceNames.length + ' images loaded');
     }
     if (niceNames.length > lengthTemp) {
-        responce += ((niceNames.length - lengthTemp) + "nice pics added.\n");
+        response += ((niceNames.length - lengthTemp) + "nice pics added.\n");
     }
 
     lengthTemp = mangaNames.length;
@@ -62,7 +62,7 @@ function init() {
     console.log(mangaNames.length + ' images loaded');
     }
     if (mangaNames.length > lengthTemp) {
-        responce += ((mangaNames.length - lengthTemp) + "manga pics added.\n");
+        response += ((mangaNames.length - lengthTemp) + "manga pics added.\n");
     }
 
     lengthTemp = lewdNames.length;
@@ -74,13 +74,13 @@ function init() {
     console.log(lewdNames.length + ' images loaded');
     }
     if (lewdNames.length > lengthTemp) {
-        responce += ((lewdNames.length - lengthTemp) + "lewd pics added.\n");
+        response += ((lewdNames.length - lengthTemp) + "lewd pics added.\n");
     }
     
 
     console.log('!!!All images loaded!!!');
 
-    return responce;
+    return response;
 }
 
 function getRandomImage(imageType){
@@ -258,7 +258,7 @@ bot.on('message', msg => {
             case 'ping':
                 var d = new Date();
                 var time = d.getTime();
-                msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Responce delay is ' + delay + ' ms.')});
+                msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Response delay is ' + delay + ' ms.')});
             break;
             case 'test':
                 msg.channel.send(typeof(args));
@@ -294,8 +294,8 @@ bot.on('message', msg => {
             break;
 
             case 'reinit':
-                var responce = init();
-                msg.channel.send('reinitialize complete. \n' + responce);
+                var response = init();
+                msg.channel.send('reinitialize complete. \n' + response);
                 break;
 
 
