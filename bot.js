@@ -333,6 +333,9 @@ bot.on('message', msg => {
             case 'bruh':
                 msg.channel.send(getBruhState());
                 break;
+            case 'fuckoff':
+                msg.channel.send('okay :(');
+                bot.destroy();
          }
          if (rollCheckRegex.test(cmd)) {
             msg.channel.send(rollDices(cmd));
@@ -345,9 +348,10 @@ bot.on('message', msg => {
     if (msg.content.toLowerCase() === 'ayy') {
         msg.channel.send('lmao');
     }
-
-    if (msg.attachments.size == 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
+//
+    if (msg.author != bot.user && msg.attachments.size == 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
         msg.channel.send("nice pic hudo");
+        CollectReactions(msg,20000);
     }
 });
 
