@@ -216,6 +216,11 @@ function CollectReactions(Message,timer)
     collector.on('end', collected => console.log(`Collected ${collected.size} reactions`));
 }
 
+function ReturnDelay(startTime) {
+    var d = new Date();
+    return d.getTime() - startTime;
+}
+
 const element = {
     mech:{
         get:'Mecha',
@@ -240,6 +245,7 @@ bot.on('ready', () => {
 bot.on('message', msg => {
     // Our bot needs to know if it will execute a command
     // It will listen for messages that will start with `~`
+
     if (msg.content.substring(0, 1) == '-') {
         var args = msg.content.substring(1).split('|');
         var cmd = args[0];
@@ -250,7 +256,9 @@ bot.on('message', msg => {
         switch(cmd) {
             // !ping
             case 'ping':
-                msg.channel.send('pong');
+                var d = new Date();
+                var time = d.getTime();
+                msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Responce delay is ' + delay + ' ms.')});
             break;
             case 'test':
                 msg.channel.send(typeof(args));
@@ -333,6 +341,10 @@ bot.on('message', msg => {
     }
     if (msg.content.toLowerCase() === 'ayy') {
         msg.channel.send('lmao');
+    }
+
+    if (msg.attachments.size > 0) {
+        msg.channel.send("nice pic hudo");
     }
 });
 
