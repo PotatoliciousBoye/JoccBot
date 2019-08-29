@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 var logger = require('winston');
 const auth = require('./auth.js');
+const config = require('./config.json');
 const fs = require('fs');
 const acceptedImageExtensions = ['jpg','png','jpeg','gif'];
 const imagePaths = {
@@ -10,6 +11,8 @@ const imagePaths = {
     manga: './Images/Manga/',
     lewd: './Images/Lewd/'
 } 
+var commandString;
+config.environment === 'LIV' ? commandString = '~' : commandString = '-';
 var cuteNames = memeNames = niceNames = mangaNames = lewdNames = new Array();
 init();
 
@@ -236,7 +239,7 @@ const element = {
     },
     nope:'error'
 }
-
+//
 // Initialize Discord Bot
 const bot = new Discord.Client();
 bot.on('ready', () => {
@@ -244,9 +247,9 @@ bot.on('ready', () => {
   });
 bot.on('message', msg => {
     // Our bot needs to know if it will execute a command
-    // It will listen for messages that will start with `~`
+    // It will listen for messages that will start with commandstring that comes from config
 
-    if (msg.content.substring(0, 1) == '-') {
+    if (msg.content.substring(0, 1) == commandString) {
         var args = msg.content.substring(1).split('|');
         var cmd = args[0];
         var rollCheckRegex = /^\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(d)([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b$/;
@@ -343,7 +346,7 @@ bot.on('message', msg => {
         msg.channel.send('lmao');
     }
 
-    if (msg.attachments.size > 0) {
+    if (msg.attachments.size == 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
         msg.channel.send("nice pic hudo");
     }
 });
