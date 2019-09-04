@@ -27,7 +27,9 @@ bot.guilds.array().forEach(guild => {
         guild.members.array().forEach(member => {
             if (!fs.existsSync('./Guilds/' + guild.id + '/' + member.id + '.json'))
             {
-                fs.openSync('./Guilds/' + guild.id + '/' + member.id + '.json','w',function(err) {
+                var userDetails = { "Username" : member.user.tag}
+                var detailString = JSON.stringify(userDetails)
+                fs.appendFileSync('./Guilds/' + guild.id + '/' + member.id + '.json',detailString,function(err) {
                     if (err) throw err;
                 });
                 
