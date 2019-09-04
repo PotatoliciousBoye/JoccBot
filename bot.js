@@ -11,11 +11,32 @@ const imagePaths = {
     manga: './Images/Manga/',
     lewd: './Images/Lewd/'
 } 
+const bot = new Discord.Client();
 var commandString;
 config.environment === 'LIV' ? commandString = '~' : commandString = '-';
 var cuteNames = memeNames = niceNames = mangaNames = lewdNames = new Array();
 init();
 
+function InitGuilds() {
+bot.guilds.array().forEach(guild => {
+    if (!fs.existsSync('./Guilds/' + guild.id + '/'))
+        {
+            fs.mkdirSync('./Guilds/' + guild.id + '/');
+            console.log('Guild directory created for '+ guild.id );
+        }
+        guild.members.array().forEach(member => {
+            if (!fs.existsSync('./Guilds/' + guild.id + '/' + member.id + '.json'))
+            {
+                fs.openSync('./Guilds/' + guild.id + '/' + member.id + '.json','w',function(err) {
+                    if (err) throw err;
+                });
+                
+                console.log('Created file for user : ' + member.id);
+            }
+        });
+});
+console.log('guilds initialized.');
+}
 
 function init() {
     var response = "", lengthTemp = 0;
@@ -241,8 +262,8 @@ const element = {
 }
 //
 // Initialize Discord Bot
-const bot = new Discord.Client();
 bot.on('ready', () => {
+    InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
   });
 bot.on('message', msg => {
@@ -302,6 +323,7 @@ bot.on('message', msg => {
 
 
 
+
             case 'do a flip':
                 msg.channel.send('flips u r mather xD');
                 break;
@@ -349,7 +371,6 @@ bot.on('message', msg => {
     }
 //
     if (msg.author != bot.user && msg.attachments.size == 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
-        msg.channel.send("nice pic hudo");
         CollectReactions(msg,20000);
     }
 });
