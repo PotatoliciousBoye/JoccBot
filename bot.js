@@ -246,8 +246,7 @@ bot.on('ready', () => {
     console.log(`Logged in as ${bot.user.tag}!`);
   });
 bot.on('message', msg => {
-    // Our bot needs to know if it will execute a command
-    // It will listen for messages that will start with commandstring that comes from config
+    // Bot will listen for messages that will start with commandstring that comes from config
 
     if (msg.content.substring(0, 1) == commandString) {
         var args = msg.content.substring(1).split('|');
