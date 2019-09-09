@@ -22,18 +22,18 @@ bot.guilds.array().forEach(guild => {
     if (!fs.existsSync('./Guilds/' + guild.id + '/'))
         {
             fs.mkdirSync('./Guilds/' + guild.id + '/');
-            console.log('Guild directory created for '+ guild.id );
+            console.log('Guild directory created for ' + guild.name + ' id:' + guild.id );
         }
         guild.members.array().forEach(member => {
             if (!fs.existsSync('./Guilds/' + guild.id + '/' + member.id + '.json'))
             {
-                var userDetails = { "Username" : member.user.tag}
+                var userDetails = { "Username" : member.user.tag, "CutieCoin" : 0,}
                 var detailString = JSON.stringify(userDetails)
                 fs.appendFileSync('./Guilds/' + guild.id + '/' + member.id + '.json',detailString,function(err) {
                     if (err) throw err;
                 });
                 
-                console.log('Created file for user : ' + member.id);
+                console.log('Created file for user : ' + member.user.tag + ' id:' + member.id);
             }
         });
 });
@@ -107,6 +107,15 @@ function init() {
     console.log('!!!All images loaded!!!');
 
     return response;
+}
+
+function GetUserDetails(userId,guildId){
+    var user = fs.readSync('./Guilds/' + guildId + '/' + userId + '.json');
+    return user;
+}
+function UpdateUserDetails(user){
+    var userJsonString = JSON.stringify(user);
+    fs.writeFileSync('./Guilds/' + guildId + '/' + userId + '.json',userJsonString);
 }
 
 function getRandomImage(imageType){
@@ -268,6 +277,9 @@ bot.on('ready', () => {
     InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
   });
+bot.on('guildCreate', () => {
+    InitGuilds();
+});
 bot.on('message', msg => {
     // Bot will listen for messages that will start with commandstring that comes from config
 
