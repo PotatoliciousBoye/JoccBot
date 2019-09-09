@@ -259,9 +259,13 @@ function CollectReactions(Message,timer)
     const collector = Message.createReactionCollector(filter, { time: timer });
     collector.on('collect', r => {
         console.log(`Collected reaction from: ${r.users.last().tag}`)
-        GiveCoin(r.users.last().id,Message.guild.id);
     });
-    collector.on('end', collected => console.log(`Collected ${collected.size} reactions`));
+    collector.on('end', collected => {
+        console.log(`Collected ${collected.size} reactions`);
+        collector.users.array().forEach(user => {
+            GiveCoin(user.id,Message.guild.id);
+        });
+    } );
 }
 
 function ReturnDelay(startTime) {
