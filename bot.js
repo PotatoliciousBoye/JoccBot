@@ -37,7 +37,7 @@ bot.guilds.array().forEach(guild => {
             }
         });
 });
-console.log('guilds initialized.');
+console.log('Guilds initialized.');
 }
 
 function init() {
@@ -110,12 +110,20 @@ function init() {
 }
 
 function GetUserDetails(userId,guildId){
-    var user = fs.readSync('./Guilds/' + guildId + '/' + userId + '.json');
+    var user = JSON.parse(fs.readFileSync('./Guilds/' + guildId + '/' + userId + '.json'));
     return user;
 }
-function UpdateUserDetails(user){
-    var userJsonString = JSON.stringify(user);
-    fs.writeFileSync('./Guilds/' + guildId + '/' + userId + '.json',userJsonString);
+function UpdateUserDetails(userJSON,userId,guildId){
+    var userJsonString = JSON.stringify(userJSON);
+    fs.writeFile('./Guilds/' + guildId + '/' + userId + '.json',userJsonString,err => {});
+    console.log('Updated ' + userJSON.Username + '.');
+}
+function GiveCoin(userId,guildId,amount = 1){
+    var userJSON = GetUserDetails(userId,guildId);
+    var currentCoin = userJSON.CutieCoin;
+    currentCoin = currentCoin + amount;
+    userJSON.CutieCoin = currentCoin;
+    UpdateUserDetails(userJSON,userId,guildId);
 }
 
 function getRandomImage(imageType){
@@ -165,21 +173,23 @@ function getBossState(time){
      }
 }
 
-function Boss(lmnt, name) {
-    this.name = name;
-    switch (lmnt) {
-        case 'mech':
-            this.lmnt = element.mech;
-            break;
-        case 'psyc':
-            this.lmnt = element.psyc;
-            break;
-        case 'bio':
-            this.lmnt = element.bio;
-            break;
-        default:
-            this.lmnt = element.nope;
-            break;
+class Boss {
+    constructor(lmnt, name) {
+        this.name = name;
+        switch (lmnt) {
+            case 'mech':
+                this.lmnt = element.mech;
+                break;
+            case 'psyc':
+                this.lmnt = element.psyc;
+                break;
+            case 'bio':
+                this.lmnt = element.bio;
+                break;
+            default:
+                this.lmnt = element.none;
+                break;
+        }
     }
 }
 
@@ -247,7 +257,10 @@ function CollectReactions(Message,timer)
     console.log('Collecting reactions for an image...');
     const filter = (reaction,user) => true;
     const collector = Message.createReactionCollector(filter, { time: timer });
-    collector.on('collect', r => console.log(`Collected reaction from: ${r.users.last().tag}`));
+    collector.on('collect', r => {
+        console.log(`Collected reaction from: ${r.users.last().tag}`)
+        GiveCoin(r.users.last().id,Message.guild.id);
+    });
     collector.on('end', collected => console.log(`Collected ${collected.size} reactions`));
 }
 
@@ -269,7 +282,7 @@ const element = {
         get:'Biologic',
         counter:'Mecha(mavi)'
     },
-    nope:'error'
+    none:'No element'
 }
 //
 // Initialize Discord Bot
