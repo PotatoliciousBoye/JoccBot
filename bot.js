@@ -125,12 +125,27 @@ function GiveCoin(userId,guildId,amount = 1){
     userJSON.CutieCoin = currentCoin;
     UpdateUserDetails(userJSON,userId,guildId);
 }
-function TransferCoin(currentUserId,targetUserId,guildId,amount){
-    var userJSON = GetUserDetails(currentUserId,guildId);
+function TransferCoin(message,amount){
+    if (message.mentions.users.first() === null) {
+        return 'You must mention someone to transfer coins to them.';
+    }
+    var userJSON = GetUserDetails(message.author.id,message.channel.guild.id);
     var coinOfUser = userJSON.CutieCoin;
     if ((coinOfUser - amount) < 0) {
         return 'You dont have enough coins for this transfer.';
     }
+    message.channel.send(`Are you sure you want to give ${amount} coins to ${message.mentions.users.first().tag}?`)
+    var collector = WaitResponse(message,10000);
+    collector.on('collect',m => {
+        GiveCoin(message.author.id,message.channel.guild.id,(amount * -1));
+        GiveCoin(message.mentions.users.first().id,message.channel.guild.id,amount);
+        collector.stop()
+        message.channel.send('Coin transfer successful!');
+    })
+    collector.on('end', collected => {
+        message.channel.send('Coin transfer cancelled.');
+    })
+    
     
 }
 
@@ -273,6 +288,7 @@ function WaitResponse(Message,timer){
         response = (response == null ? 'Cancelled' : response);
         console.log(response);
     })
+    return collector
 }
 
 function CollectReactions(Message,timer)
@@ -324,7 +340,7 @@ bot.on('message', msg => {
     // Bot will listen for messages that will start with commandstring that comes from config
 
     if (msg.content.substring(0, 1) == commandString) {
-        var args = msg.content.substring(1).split('|');
+        var args = msg.content.substring(1).split(' ');
         var cmd = args[0];
         var rollCheckRegex = /^\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(d)([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b$/;
        
@@ -375,6 +391,10 @@ bot.on('message', msg => {
                 msg.channel.send('reinitialize complete. \n' + response);
                 break;
 
+            case 'givecoin':
+                var response = TransferCoin(msg,parseInt(args[0]));
+                msg.channel.send(response);
+                break;
 
 
 
