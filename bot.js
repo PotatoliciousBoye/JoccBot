@@ -125,6 +125,14 @@ function GiveCoin(userId,guildId,amount = 1){
     userJSON.CutieCoin = currentCoin;
     UpdateUserDetails(userJSON,userId,guildId);
 }
+function TransferCoin(currentUserId,targetUserId,guildId,amount){
+    var userJSON = GetUserDetails(currentUserId,guildId);
+    var coinOfUser = userJSON.CutieCoin;
+    if ((coinOfUser - amount) < 0) {
+        return 'You dont have enough coins for this transfer.';
+    }
+    
+}
 
 function getRandomImage(imageType){
     var targetImages, mainPath;
@@ -156,20 +164,20 @@ function getRandomImage(imageType){
     var randomImage = targetImages[Math.floor(Math.random() * targetImages.length)]
     var fileExtension = randomImage.split('.');
     if (acceptedImageExtensions.includes(fileExtension[1])) {
-        console.log('image ready returning... ' + mainPath + randomImage)
+        console.log('Image ready, returning... ' + mainPath + randomImage)
         return mainPath + randomImage
     }
     else{
-        console.log('Wrong Filetype, Trying again...  /' + randomImage);
+        console.log('Wrong filetype, trying again...  /' + randomImage);
         return getRandomImage(imageType)
     }
 }
 
 function getBossState(time){
     if (time >= 20 || time <= 2) {
-        return 'Aktif'
+        return 'Active'
      } else {
-         return 'Beklemede'
+         return 'Waiting...'
      }
 }
 
@@ -203,10 +211,10 @@ function getBossDetails(){
     bosstime.setHours(18);
     bosstime.setMinutes(00);
     var timeLeft = new Date(bosstime - currentTime);
-    return 'Boss Durumu: ' + getBossState(currentTime.getHours()) +
-        '\nBoss Adı: ' + bossDetails.name +
-        '\nBoss Tipi: ' + bossDetails.lmnt.get + ' | Üstün Element : ' + bossDetails.lmnt.counter +
-         '\nBossa Kalan Süre: ' + timeLeft.getHours() + ' saat ' + (timeLeft.getMinutes()) + ' dakika' 
+    return 'Boss state: ' + getBossState(currentTime.getHours()) +
+        '\nBoss name: ' + bossDetails.name +
+        '\nBoss type: ' + bossDetails.lmnt.get + ' | Counter : ' + bossDetails.lmnt.counter +
+         '\nTime until next boss : ' + timeLeft.getHours() + ' hours ' + (timeLeft.getMinutes()) + ' minutes.' 
              
 
 }
@@ -252,9 +260,24 @@ function rollDices(rollSettings){
     return resultDices;
 }
 
+function WaitResponse(Message,timer){
+    console.log(`Awaiting response from ${Message.author.tag}...`)
+    const filter = msg => msg.author === Message.author && (msg.content.toLowerCase() === 'y' || msg.content.toLowerCase() === 'yes');
+    const collector = Message.channel.createMessageCollector(filter,{ time: timer});
+    var response = null;
+    collector.on('collect', m => {
+        response = 'Acknowledged';
+        collector.stop()
+    })
+    collector.on('end', collected => {
+        response = (response == null ? 'Cancelled' : response);
+        console.log(response);
+    })
+}
+
 function CollectReactions(Message,timer)
 {
-    console.log('Collecting reactions for an image...');
+    console.log('Collecting reactions on a message...');
     const filter = (reaction,user) => true;
     const collector = Message.createReactionCollector(filter, { time: timer });
     collector.on('collect', r => {
@@ -276,15 +299,15 @@ function ReturnDelay(startTime) {
 const element = {
     mech:{
         get:'Mecha',
-        counter:'Psychic(mor)'
+        counter:'Psychic'
     },
     psyc:{
         get:'Psychic',
-        counter:'Biologic(turuncu)'
+        counter:'Biologic'
     },
     bio:{
         get:'Biologic',
-        counter:'Mecha(mavi)'
+        counter:'Mecha'
     },
     none:'No element'
 }
@@ -315,7 +338,7 @@ bot.on('message', msg => {
                 msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Response delay is ' + delay + ' ms.')});
             break;
             case 'test':
-                msg.channel.send(typeof(args));
+                msg.channel.send('bruh?').then(Message => {WaitResponse(msg,3000)});
             break;
             case 'boss':
                 msg.channel.send(getBossDetails());
