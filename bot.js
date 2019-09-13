@@ -37,7 +37,7 @@ bot.guilds.array().forEach(guild => {
             }
         });
 });
-console.log('guilds initialized.');
+console.log('Guilds initialized.');
 }
 
 function init() {
@@ -110,12 +110,57 @@ function init() {
 }
 
 function GetUserDetails(userId,guildId){
-    var user = fs.readSync('./Guilds/' + guildId + '/' + userId + '.json');
+    var user = JSON.parse(fs.readFileSync('./Guilds/' + guildId + '/' + userId + '.json'));
     return user;
 }
-function UpdateUserDetails(user){
-    var userJsonString = JSON.stringify(user);
-    fs.writeFileSync('./Guilds/' + guildId + '/' + userId + '.json',userJsonString);
+function UpdateUserDetails(userJSON,userId,guildId){
+    var userJsonString = JSON.stringify(userJSON);
+    fs.writeFile('./Guilds/' + guildId + '/' + userId + '.json',userJsonString,err => {});
+    console.log('Updated ' + userJSON.Username + '.');
+}
+function GiveCoin(userId,guildId,amount = 1){
+    var userJSON = GetUserDetails(userId,guildId);
+    var currentCoin = userJSON.CutieCoin;
+    currentCoin = currentCoin + amount;
+    userJSON.CutieCoin = currentCoin;
+    UpdateUserDetails(userJSON,userId,guildId);
+}
+function TransferCoin(message,amount = 1){
+    if (isNaN(parseInt(amount))) {
+        return 'Please enter a number for amount';
+    }
+    else
+    {
+        amount = parseInt(amount);
+    }
+    
+    if (!message.mentions.users.first()) {
+        return 'You must mention someone to transfer coins to them.';
+    }
+    var userJSON = GetUserDetails(message.author.id,message.channel.guild.id);
+    var coinOfUser = userJSON.CutieCoin;
+    if ((coinOfUser - amount) < 0) {
+        return 'You dont have enough coins for this transfer.';
+    }
+    message.reply(`Are you sure you want to give ${amount === 1 ? 'a coin' : amount + ' coins'} to ${message.mentions.users.first().tag}?`)
+    const collector = WaitResponse(message,10000);
+    collector.on('collect',m => {
+        GiveCoin(message.author.id,message.channel.guild.id,(amount * -1));
+        GiveCoin(message.mentions.users.first().id,message.channel.guild.id,amount);
+        collector.stop()
+    })
+    collector.on('end', collected => {
+        if(collected.size > 0)
+        {
+            message.channel.send('Coin transfer successful!');
+        }
+        else
+        {
+            message.channel.send('Coin transfer cancelled.');
+        }
+    })
+    
+    
 }
 
 function getRandomImage(imageType){
@@ -148,38 +193,40 @@ function getRandomImage(imageType){
     var randomImage = targetImages[Math.floor(Math.random() * targetImages.length)]
     var fileExtension = randomImage.split('.');
     if (acceptedImageExtensions.includes(fileExtension[1])) {
-        console.log('image ready returning... ' + mainPath + randomImage)
+        console.log('Image ready, returning... ' + mainPath + randomImage)
         return mainPath + randomImage
     }
     else{
-        console.log('Wrong Filetype, Trying again...  /' + randomImage);
+        console.log('Wrong filetype, trying again...  /' + randomImage);
         return getRandomImage(imageType)
     }
 }
 
 function getBossState(time){
     if (time >= 20 || time <= 2) {
-        return 'Aktif'
+        return 'Active'
      } else {
-         return 'Beklemede'
+         return 'Waiting...'
      }
 }
 
-function Boss(lmnt, name) {
-    this.name = name;
-    switch (lmnt) {
-        case 'mech':
-            this.lmnt = element.mech;
-            break;
-        case 'psyc':
-            this.lmnt = element.psyc;
-            break;
-        case 'bio':
-            this.lmnt = element.bio;
-            break;
-        default:
-            this.lmnt = element.nope;
-            break;
+class Boss {
+    constructor(lmnt, name) {
+        this.name = name;
+        switch (lmnt) {
+            case 'mech':
+                this.lmnt = element.mech;
+                break;
+            case 'psyc':
+                this.lmnt = element.psyc;
+                break;
+            case 'bio':
+                this.lmnt = element.bio;
+                break;
+            default:
+                this.lmnt = element.none;
+                break;
+        }
     }
 }
 
@@ -193,10 +240,10 @@ function getBossDetails(){
     bosstime.setHours(18);
     bosstime.setMinutes(00);
     var timeLeft = new Date(bosstime - currentTime);
-    return 'Boss Durumu: ' + getBossState(currentTime.getHours()) +
-        '\nBoss Adı: ' + bossDetails.name +
-        '\nBoss Tipi: ' + bossDetails.lmnt.get + ' | Üstün Element : ' + bossDetails.lmnt.counter +
-         '\nBossa Kalan Süre: ' + timeLeft.getHours() + ' saat ' + (timeLeft.getMinutes()) + ' dakika' 
+    return 'Boss state: ' + getBossState(currentTime.getHours()) +
+        '\nBoss name: ' + bossDetails.name +
+        '\nBoss type: ' + bossDetails.lmnt.get + ' | Counter : ' + bossDetails.lmnt.counter +
+         '\nTime until next boss : ' + timeLeft.getHours() + ' hours ' + (timeLeft.getMinutes()) + ' minutes.' 
              
 
 }
@@ -242,13 +289,36 @@ function rollDices(rollSettings){
     return resultDices;
 }
 
+function WaitResponse(Message,timer){
+    console.log(`Awaiting response from ${Message.author.tag}...`)
+    const filter = msg => msg.author === Message.author && (msg.content.toLowerCase() === 'y' || msg.content.toLowerCase() === 'yes');
+    const collector = Message.channel.createMessageCollector(filter,{ time: timer});
+    var response = null;
+    collector.on('collect', m => {
+        response = 'Acknowledged';
+        collector.stop()
+    })
+    collector.on('end', collected => {
+        response = (response == null ? 'Cancelled' : response);
+        console.log(response);
+    })
+    return collector
+}
+
 function CollectReactions(Message,timer)
 {
-    console.log('Collecting reactions for an image...');
+    console.log('Collecting reactions on a message...');
     const filter = (reaction,user) => true;
     const collector = Message.createReactionCollector(filter, { time: timer });
-    collector.on('collect', r => console.log(`Collected reaction from: ${r.users.last().tag}`));
-    collector.on('end', collected => console.log(`Collected ${collected.size} reactions`));
+    collector.on('collect', r => {
+        console.log(`Collected reaction from: ${r.users.last().tag}`)
+    });
+    collector.on('end', collected => {
+        console.log(`Collected ${collected.size} reactions`);
+        collector.users.array().forEach(user => {
+            GiveCoin(user.id,Message.guild.id);
+        });
+    } );
 }
 
 function ReturnDelay(startTime) {
@@ -259,17 +329,17 @@ function ReturnDelay(startTime) {
 const element = {
     mech:{
         get:'Mecha',
-        counter:'Psychic(mor)'
+        counter:'Psychic'
     },
     psyc:{
         get:'Psychic',
-        counter:'Biologic(turuncu)'
+        counter:'Biologic'
     },
     bio:{
         get:'Biologic',
-        counter:'Mecha(mavi)'
+        counter:'Mecha'
     },
-    nope:'error'
+    none:'No element'
 }
 //
 // Initialize Discord Bot
@@ -284,7 +354,7 @@ bot.on('message', msg => {
     // Bot will listen for messages that will start with commandstring that comes from config
 
     if (msg.content.substring(0, 1) == commandString) {
-        var args = msg.content.substring(1).split('|');
+        var args = msg.content.substring(1).split(' ');
         var cmd = args[0];
         var rollCheckRegex = /^\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(d)([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b$/;
        
@@ -298,7 +368,15 @@ bot.on('message', msg => {
                 msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Response delay is ' + delay + ' ms.')});
             break;
             case 'test':
-                msg.channel.send(typeof(args));
+                    const embed = new Discord.RichEmbed()
+                    .setTitle('this be an embed')
+                    .setColor(0xB79268)
+                    .setDescription('embed af')
+                    .setFooter('bruh')
+                    .setTimestamp(new Date().getTime())
+                    ;
+                    
+                msg.channel.send(embed);
             break;
             case 'boss':
                 msg.channel.send(getBossDetails());
@@ -335,6 +413,12 @@ bot.on('message', msg => {
                 msg.channel.send('reinitialize complete. \n' + response);
                 break;
 
+            case 'givecoin':
+                var response = TransferCoin(msg,args[1]);
+                if (response != null) {
+                    msg.reply(response);    
+                }
+                break;
 
 
 
