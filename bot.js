@@ -125,8 +125,16 @@ function GiveCoin(userId,guildId,amount = 1){
     userJSON.CutieCoin = currentCoin;
     UpdateUserDetails(userJSON,userId,guildId);
 }
-function TransferCoin(message,amount){
-    if (message.mentions.users.first() === null) {
+function TransferCoin(message,amount = 1){
+    if (isNaN(parseInt(amount))) {
+        return 'Please enter a number for amount';
+    }
+    else
+    {
+        amount = parseInt(amount);
+    }
+    
+    if (!message.mentions.users.first()) {
         return 'You must mention someone to transfer coins to them.';
     }
     var userJSON = GetUserDetails(message.author.id,message.channel.guild.id);
@@ -134,16 +142,22 @@ function TransferCoin(message,amount){
     if ((coinOfUser - amount) < 0) {
         return 'You dont have enough coins for this transfer.';
     }
-    message.channel.send(`Are you sure you want to give ${amount} coins to ${message.mentions.users.first().tag}?`)
-    var collector = WaitResponse(message,10000);
+    message.reply(`Are you sure you want to give ${amount === 1 ? 'a coin' : amount + ' coins'} to ${message.mentions.users.first().tag}?`)
+    const collector = WaitResponse(message,10000);
     collector.on('collect',m => {
         GiveCoin(message.author.id,message.channel.guild.id,(amount * -1));
         GiveCoin(message.mentions.users.first().id,message.channel.guild.id,amount);
         collector.stop()
-        message.channel.send('Coin transfer successful!');
     })
     collector.on('end', collected => {
-        message.channel.send('Coin transfer cancelled.');
+        if(collected.size > 0)
+        {
+            message.channel.send('Coin transfer successful!');
+        }
+        else
+        {
+            message.channel.send('Coin transfer cancelled.');
+        }
     })
     
     
@@ -354,7 +368,15 @@ bot.on('message', msg => {
                 msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Response delay is ' + delay + ' ms.')});
             break;
             case 'test':
-                msg.channel.send('bruh?').then(Message => {WaitResponse(msg,3000)});
+                    const embed = new Discord.RichEmbed()
+                    .setTitle('this be an embed')
+                    .setColor(0xB79268)
+                    .setDescription('embed af')
+                    .setFooter('bruh')
+                    .setTimestamp(new Date().getTime())
+                    ;
+                    
+                msg.channel.send(embed);
             break;
             case 'boss':
                 msg.channel.send(getBossDetails());
@@ -392,8 +414,10 @@ bot.on('message', msg => {
                 break;
 
             case 'givecoin':
-                var response = TransferCoin(msg,parseInt(args[0]));
-                msg.channel.send(response);
+                var response = TransferCoin(msg,args[1]);
+                if (response != null) {
+                    msg.reply(response);    
+                }
                 break;
 
 
