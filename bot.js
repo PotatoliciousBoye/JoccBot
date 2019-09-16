@@ -12,11 +12,11 @@ const imagePaths = {
     lewd: './Images/Lewd/'
 } 
 const bot = new Discord.Client();
-var commandString;
+var commandString, botAuthor;
 config.environment === 'LIV' ? commandString = '~' : commandString = '-';
 var cuteNames = memeNames = niceNames = mangaNames = lewdNames = new Array();
-
-var botAuthor;
+var lastDM = new Discord.Message();
+var lastDMUser = new Discord.User();
 init();
 
 function InitGuilds() {
@@ -443,8 +443,12 @@ bot.on('message', msg => {
          }
     }
     if (msg.channel.type === "dm") {
-        if (msg.author != bot.user) {
-            botAuthor.createDM().then(channel => channel.send(`${msg.author.tag} has DM'd me this message : \`\`\`${msg.content}\`\`\``));
+        if (msg.author === lastDMUser) {
+            lastDM.edit(`${lastDM.content}\`\`\`${msg.content}\`\`\``);
+        }
+        else if (msg.author != bot.user) {
+            botAuthor.createDM().then(channel => channel.send(`${msg.author.tag} has DM'd me these messages : \`\`\`${msg.content}\`\`\``).then(message => lastDM = message));
+            lastDMUser = msg.author;
         }
     }
     var matherCheck = /\banan/i;
@@ -455,7 +459,7 @@ bot.on('message', msg => {
         msg.channel.send('lmao');
     }
 //
-    if (msg.author != bot.user && msg.attachments.size == 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
+    if (msg.author != bot.user && msg.attachments.size > 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
         CollectReactions(msg,20000);
     }
 });
