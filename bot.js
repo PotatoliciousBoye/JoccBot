@@ -15,6 +15,8 @@ const bot = new Discord.Client();
 var commandString;
 config.environment === 'LIV' ? commandString = '~' : commandString = '-';
 var cuteNames = memeNames = niceNames = mangaNames = lewdNames = new Array();
+
+var botAuthor;
 init();
 
 function InitGuilds() {
@@ -346,6 +348,7 @@ const element = {
 bot.on('ready', () => {
     InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
+    bot.fetchUser("180964234010558464").then(user => botAuthor = user);
   });
 bot.on('guildCreate', () => {
     InitGuilds();
@@ -423,46 +426,27 @@ bot.on('message', msg => {
                 break;
 
 
-
             case 'do a flip':
                 msg.channel.send('flips u r mather xD');
                 break;
-            case 'kahve':
-            case 'sıcak kahve':
-                msg.channel.send(msg.author.username + ' botuma yavşama pls.');
-            break;
-            case 'yağız çalışıyo mu':
-                var currentHour = new Date(Date.now()).getHours();
-                var mesaj;
-                if (currentHour >= 8 && currentHour <= 17) {
-                    mesaj = 'evet';
-                 } else {
-                     mesaj = 'hayır';
-                 }
-                 msg.channel.send(mesaj);
-            break;
-            case 'yağız evde mi':
-                var currentHour = new Date(Date.now()).getHours();
-                var mesaj;
-                if (currentHour >= 8 && currentHour <= 17) {
-                    mesaj = 'hayır';
-                 } else {
-                     mesaj = 'belki';
-                 }
-                 msg.channel.send(mesaj);
-            break;
             case 'bruh':
                 msg.channel.send(getBruhState());
                 break;
-            case 'fuckoff':
+            case 'shutdown':
                 msg.channel.send('okay :(');
                 bot.destroy();
          }
         }
+        
          if (rollCheckRegex.test(cmd)) {
             msg.channel.send(rollDices(cmd));
          }
-     }
+    }
+    if (msg.channel.type === "dm") {
+        if (msg.author != bot.user) {
+            botAuthor.createDM().then(channel => channel.send(`${msg.author.tag} has DM'd me this message : \`\`\`${msg.content}\`\`\``));
+        }
+    }
     var matherCheck = /\banan/i;
     if (matherCheck.test(msg.content)) {
         msg.channel.send('hayır u r mather xD');
