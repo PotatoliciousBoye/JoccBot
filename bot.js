@@ -360,8 +360,10 @@ bot.on('message', msg => {
        
 
         args = args.splice(1);
+        if(msg.channel.type === "text")
+        {
         switch(cmd) {
-            // !ping
+            
             case 'ping':
                 var d = new Date();
                 var time = d.getTime();
@@ -456,6 +458,7 @@ bot.on('message', msg => {
                 msg.channel.send('okay :(');
                 bot.destroy();
          }
+        }
          if (rollCheckRegex.test(cmd)) {
             msg.channel.send(rollDices(cmd));
          }
