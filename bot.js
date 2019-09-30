@@ -291,9 +291,10 @@ function rollDices(rollSettings){
     return resultDices;
 }
 
-function WaitResponse(Message,timer){
+function WaitResponse(Message,timer,responseWords = new String()){
+    var responseArray = responseWords.split(',');
     console.log(`Awaiting response from ${Message.author.tag}...`)
-    const filter = msg => msg.author === Message.author && (msg.content.toLowerCase() === 'y' || msg.content.toLowerCase() === 'yes');
+    const filter = msg => msg.author === Message.author && responseArray.includes(msg.content);
     const collector = Message.channel.createMessageCollector(filter,{ time: timer});
     var response = null;
     collector.on('collect', m => {
@@ -348,9 +349,12 @@ const element = {
 bot.on('ready', () => {
     InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
-    bot.fetchUser("180964234010558464").then(user => botAuthor = user);
+    bot.fetchUser(auth.getAuthor).then(user => botAuthor = user);
   });
 bot.on('guildCreate', () => {
+    InitGuilds();
+});
+bot.on('guildMemberAdd', () => {
     InitGuilds();
 });
 bot.on('message', msg => {
