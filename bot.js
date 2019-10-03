@@ -35,7 +35,7 @@ bot.guilds.array().forEach(guild => {
                     if (err) throw err;
                 });
                 
-                console.log('Created file for user : ' + member.user.tag + ' id:' + member.id);
+                console.log(`Created file for user : ${member.user.tag} id: ${member.id} on guild ${guild.name}.`);
             }
         });
 });
@@ -384,7 +384,6 @@ bot.on('message', msg => {
                     .setFooter('bruh')
                     .setTimestamp(new Date().getTime())
                     ;
-                    
                 msg.channel.send(embed);
             break;
             case 'boss':
@@ -467,5 +466,10 @@ bot.on('message', msg => {
         CollectReactions(msg,20000);
     }
 });
+
+
+process.on('uncaughtException', function (err) {
+    botAuthor.createDM().then(channel => channel.send(`Bot died with exception: ${err}`));
+  });
 
 bot.login(auth.getToken());
