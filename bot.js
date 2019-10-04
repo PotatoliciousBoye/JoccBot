@@ -465,6 +465,23 @@ bot.on('message', msg => {
     if (msg.author != bot.user && msg.attachments.size > 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
         CollectReactions(msg,20000);
     }
+    if (msg.content === 'Save this image^') {
+        msg.channel.fetchMessages({limit: 1, before : msg.id})
+            .then(message => {
+                if (message.first().attachments.size === 0) {
+                    msg.channel.send("That's not an image that I can save!");
+                }
+                else{
+                    var messageAttachments = message.first().attachments;
+                    var saveChannel = bot.channels.get("629578376088256512");
+                    messageAttachments.forEach(messageAttachment => {
+                        saveChannel.send({file : messageAttachment.url});
+                    msg.channel.send("Done!");
+                });
+                }
+            })
+            .catch(console.error);
+    }
 });
 
 
