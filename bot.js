@@ -35,7 +35,7 @@ bot.guilds.array().forEach(guild => {
                     if (err) throw err;
                 });
                 
-                console.log('Created file for user : ' + member.user.tag + ' id:' + member.id);
+                console.log(`Created file for user : ${member.user.tag} id: ${member.id} on guild ${guild.name}.`);
             }
         });
 });
@@ -291,9 +291,10 @@ function rollDices(rollSettings){
     return resultDices;
 }
 
-function WaitResponse(Message,timer){
+function WaitResponse(Message,timer,responseWords = new String()){
+    var responseArray = responseWords.split(',');
     console.log(`Awaiting response from ${Message.author.tag}...`)
-    const filter = msg => msg.author === Message.author && (msg.content.toLowerCase() === 'y' || msg.content.toLowerCase() === 'yes');
+    const filter = msg => msg.author === Message.author && responseArray.includes(msg.content);
     const collector = Message.channel.createMessageCollector(filter,{ time: timer});
     var response = null;
     collector.on('collect', m => {
@@ -348,9 +349,12 @@ const element = {
 bot.on('ready', () => {
     InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
-    bot.fetchUser("180964234010558464").then(user => botAuthor = user);
+    bot.fetchUser(auth.getAuthor).then(user => botAuthor = user);
   });
 bot.on('guildCreate', () => {
+    InitGuilds();
+});
+bot.on('guildMemberAdd', () => {
     InitGuilds();
 });
 bot.on('message', msg => {
@@ -380,7 +384,6 @@ bot.on('message', msg => {
                     .setFooter('bruh')
                     .setTimestamp(new Date().getTime())
                     ;
-                    
                 msg.channel.send(embed);
             break;
             case 'boss':
@@ -462,6 +465,28 @@ bot.on('message', msg => {
     if (msg.author != bot.user && msg.attachments.size > 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
         CollectReactions(msg,20000);
     }
+    if (msg.content === 'Save this image^') {
+        msg.channel.fetchMessages({limit: 1, before : msg.id})
+            .then(message => {
+                if (message.first().attachments.size === 0) {
+                    msg.channel.send("That's not an image that I can save!");
+                }
+                else{
+                    var messageAttachments = message.first().attachments;
+                    var saveChannel = bot.channels.get("629578376088256512");
+                    messageAttachments.forEach(messageAttachment => {
+                        saveChannel.send({file : messageAttachment.url});
+                    msg.channel.send("Done!");
+                });
+                }
+            })
+            .catch(console.error);
+    }
 });
+
+
+process.on('uncaughtException', function (err) {
+    botAuthor.createDM().then(channel => channel.send(`Bot died with exception: ${err}`));
+  });
 
 bot.login(auth.getToken());
