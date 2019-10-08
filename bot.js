@@ -145,7 +145,7 @@ function TransferCoin(message,amount = 1){
         return 'You dont have enough coins for this transfer.';
     }
     message.reply(`Are you sure you want to give ${amount === 1 ? 'a coin' : amount + ' coins'} to ${message.mentions.users.first().tag}?`)
-    const collector = WaitResponse(message,10000);
+    const collector = WaitResponse(message,10000,'y yes ye');
     collector.on('collect',m => {
         GiveCoin(message.author.id,message.channel.guild.id,(amount * -1));
         GiveCoin(message.mentions.users.first().id,message.channel.guild.id,amount);
@@ -429,6 +429,34 @@ bot.on('message', msg => {
                 break;
 
 
+            case 'music':
+                var musicType = args[0];
+                if (musicType === 'swing'|| musicType === 'cafe') {
+                    if (msg.member.voiceChannel) {
+                        msg.member.voiceChannel.join()
+                            .then(connection => { // Connection is an instance of VoiceConnection
+                                msg.reply(`Started playing ${musicType} stream...`);
+                                const dispatcher = connection.playArbitraryInput(`http://lainon.life:8000/${musicType}.mp3`);
+                            })
+                        .catch(console.log);
+                    } else {
+                      msg.reply('You need to join a voice channel first!');
+                    }
+                }
+                else if (musicType === 'leave')
+                {
+                    if (msg.guild.me.voiceChannel !== undefined) {
+                        msg.guild.me.voiceChannel.leave();
+                    }
+                }
+                else
+                {
+                    msg.reply(`Please use \"${commandString}music [MusicType]\" to start streaming. Available musictypes: swing, cafe`);
+                }
+                
+                break;
+
+
             case 'do a flip':
                 msg.channel.send('flips u r mather xD');
                 break;
@@ -487,6 +515,7 @@ bot.on('message', msg => {
 
 process.on('uncaughtException', function (err) {
     botAuthor.createDM().then(channel => channel.send(`Bot died with exception: ${err}`));
+    bot.destroy();
   });
 
 bot.login(auth.getToken());
