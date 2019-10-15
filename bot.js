@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 var logger = require('winston');
 const auth = require('./auth.js');
+const ytdl = require('ytdl-core');
 const config = require('./config.json');
 const fs = require('fs');
 const acceptedImageExtensions = ['jpg','png','jpeg','gif'];
@@ -11,6 +12,7 @@ const imagePaths = {
     manga: './Images/Manga/',
     lewd: './Images/Lewd/'
 } 
+const queue = new Map();
 const bot = new Discord.Client();
 var commandString, botAuthor;
 config.environment === 'LIV' ? commandString = '~' : commandString = '-';
@@ -324,6 +326,90 @@ function CollectReactions(Message,timer)
     } );
 }
 
+
+//#region PlayFromYoutube
+async function execute(message, serverQueue) {
+	const args = message.content.split(' ');
+
+	const voiceChannel = message.member.voiceChannel;
+	if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
+	const permissions = voiceChannel.permissionsFor(message.client.user);
+	if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+		return message.channel.send('I need the permissions to join and speak in your voice channel!');
+	}
+
+	const songInfo = await ytdl.getInfo(args[1]);
+	const song = {
+		title: songInfo.title,
+		url: songInfo.video_url,
+	};
+
+	if (!serverQueue) {
+		const queueContruct = {
+			textChannel: message.channel,
+			voiceChannel: voiceChannel,
+			connection: null,
+			songs: [],
+			volume: 5,
+			playing: true,
+		};
+
+		queue.set(message.guild.id, queueContruct);
+
+		queueContruct.songs.push(song);
+
+		try {
+			var connection = await voiceChannel.join();
+			queueContruct.connection = connection;
+			play(message.guild, queueContruct.songs[0]);
+		} catch (err) {
+			console.log(err);
+			queue.delete(message.guild.id);
+			return message.channel.send(err);
+		}
+	} else {
+		serverQueue.songs.push(song);
+		console.log(serverQueue.songs);
+		return message.channel.send(`${song.title} has been added to the queue!`);
+	}
+
+}
+
+function skip(message, serverQueue) {
+	if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to stop the music!');
+	if (!serverQueue) return message.channel.send('There is no song that I could skip!');
+	serverQueue.connection.dispatcher.end();
+}
+
+function stop(message, serverQueue) {
+	if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to stop the music!');
+	serverQueue.songs = [];
+	serverQueue.connection.dispatcher.end();
+}
+
+function play(guild, song) {
+	const serverQueue = queue.get(guild.id);
+
+	if (!song) {
+		serverQueue.voiceChannel.leave();
+		queue.delete(guild.id);
+		return;
+	}
+
+	const dispatcher = serverQueue.connection.playArbitraryInput(ytdl(song.url, {quality : "highestaudio", filter : "audioonly"}))
+		.on('end', () => {
+			console.log('Music ended!');
+			serverQueue.songs.shift();
+			play(guild, serverQueue.songs[0]);
+		})
+		.on('error', error => {
+			console.error(error);
+		});
+	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+}
+
+//#endregion
+
 function ReturnDelay(startTime) {
     var d = new Date();
     return d.getTime() - startTime;
@@ -364,6 +450,7 @@ bot.on('message', msg => {
         var args = msg.content.substring(1).split(' ');
         var cmd = args[0];
         var rollCheckRegex = /^\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(d)([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b$/;
+        const serverQueue = queue.get(msg.guild.id);
        
 
         args = args.splice(1);
@@ -431,6 +518,7 @@ bot.on('message', msg => {
 
             case 'music':
                 var musicType = args[0];
+                var link = args[1];
                 if (musicType === 'swing'|| musicType === 'cafe') {
                     if (msg.member.voiceChannel) {
                         msg.member.voiceChannel.join()
@@ -449,12 +537,37 @@ bot.on('message', msg => {
                         msg.guild.me.voiceChannel.leave();
                     }
                 }
+                else if (musicType === 'link')
+                {
+                    if (msg.member.voiceChannel) {
+                        msg.member.voiceChannel.join()
+                            .then(connection => { // Connection is an instance of VoiceConnection
+                                msg.reply(`Started playing music on ${link}...`);
+                                const dispatcher = connection.playArbitraryInput(link);
+                            })
+                        .catch(console.log);
+                    } else {
+                      msg.reply('You need to join a voice channel first!');
+                    }
+                }
                 else
                 {
                     msg.reply(`Please use \"${commandString}music [MusicType]\" to start streaming. Available musictypes: swing, cafe`);
                 }
                 
                 break;
+
+            case 'play':
+            case 'p':
+                execute(msg,serverQueue);
+                break;
+            case 'skip':
+            case 's':
+                skip(msg,serverQueue);
+                break;
+            case 'stop':
+                stop(msg,serverQueue);
+                break;  
 
 
             case 'do a flip':
