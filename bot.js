@@ -1,10 +1,10 @@
 const Discord = require('discord.js');
-var logger = require('winston');
 const auth = require('./auth.js');
 const ytdl = require('ytdl-core');
 const config = require('./config.json');
 const fs = require('fs');
 const acceptedImageExtensions = ['jpg','png','jpeg','gif'];
+var youtubeSearch = require("youtube-search")
 const imagePaths = {
     cute: './Images/Cutes/',
     meme: './Images/Meme/',
@@ -326,24 +326,43 @@ function CollectReactions(Message,timer)
     } );
 }
 
+// function sleep(ms) {
+//     return new Promise(resolve => setTimeout(resolve, ms));
+//   }
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+  
 //#region PlayFromYoutube
 async function execute(message, serverQueue) {
 	const args = message.content.split(' ');
-
+    var songID;
 	const voiceChannel = message.member.voiceChannel;
 	if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
 	const permissions = voiceChannel.permissionsFor(message.client.user);
 	if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
 		return message.channel.send('I need the permissions to join and speak in your voice channel!');
-	}
+    }
 
-	const songInfo = await ytdl.getInfo(args[1]);
+    var linkCheck = /\b(youtube.com|youtu.be)/i;
+    if(!linkCheck.test(args[1]))
+    {
+        var opts = {maxResults: 1,key: auth.getYoutubeApi}
+        var search = args.slice(1);
+        search = search.join(" ");
+        youtubeSearch(search,opts,function(error,result) {
+            songID = result[0].id;
+            });
+        await sleep(1000);
+    }
+
+    
+
+	const songInfo = await ytdl.getInfo(songID);
 	const song = {
 		title: songInfo.title,
 		url: songInfo.video_url,
 	};
-
+    message.channel.send(`Playing \`${song.title}\`...`);
 	if (!serverQueue) {
 		const queueContruct = {
 			textChannel: message.channel,

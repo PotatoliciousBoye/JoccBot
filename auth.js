@@ -11,5 +11,7 @@ module.exports = {
         }
     },
     
-    getAuthor: tokens.author 
+    getAuthor: tokens.author,
+
+    getYoutubeApi: tokens.youtube
 }
