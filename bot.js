@@ -346,16 +346,20 @@ async function execute(message, serverQueue) {
     var linkCheck = /\b(youtube.com|youtu.be)/i;
     if(!linkCheck.test(args[1]))
     {
-        var opts = {maxResults: 1,key: auth.getYoutubeApi}
+        var opts = {maxResults: 1,key: auth.getYoutubeApi,type: "video"}
         var search = args.slice(1);
+        var searchResult;
         search = search.join(" ");
         youtubeSearch(search,opts,function(error,result) {
-            songID = result[0].id;
+            searchResult = result[0];
             });
         await sleep(1000);
+        songID = searchResult.id;
     }
-
-    
+    else 
+    {
+        songID = args[1];
+    }
 
 	const songInfo = await ytdl.getInfo(songID);
 	const song = {
@@ -389,7 +393,7 @@ async function execute(message, serverQueue) {
 	} else {
 		serverQueue.songs.push(song);
 		console.log(serverQueue.songs);
-		return message.channel.send(`${song.title} has been added to the queue!`);
+		return message.channel.send(`\`${song.title}\` has been added to the queue!`);
 	}
 
 }
@@ -449,6 +453,20 @@ const element = {
     },
     none:'No element'
 }
+
+async function test(message)
+{
+    var opts = {maxResults: 1,key: auth.getYoutubeApi}
+    var args = message.content.split(' ');
+    var search = args.slice(1);
+    search = search.join(" ");
+    var returns;
+    youtubeSearch(search,opts,function(error,result) {
+        returns = `${result[0].kind} id : ${result[0].id}   searched query : ${search}  | Title : ${result[0]}`;
+        });
+    await sleep(1000);
+    message.reply(returns);
+}
 //
 // Initialize Discord Bot
 bot.on('ready', () => {
@@ -483,14 +501,7 @@ bot.on('message', msg => {
                 msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Response delay is ' + delay + ' ms.')});
             break;
             case 'test':
-                    const embed = new Discord.RichEmbed()
-                    .setTitle('this be an embed')
-                    .setColor(0xB79268)
-                    .setDescription('embed af')
-                    .setFooter('bruh')
-                    .setTimestamp(new Date().getTime())
-                    ;
-                msg.channel.send(embed);
+                test(msg);
             break;
             case 'boss':
                 msg.channel.send(getBossDetails());
