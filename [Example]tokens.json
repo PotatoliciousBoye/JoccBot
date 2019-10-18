@@ -1,0 +1,6 @@
+{
+    "DEVtoken": "Token for the Developer build of the bot, OPTIONAL",
+    "LIVtoken": "Token for the Live build of the bot",
+    "author": "your discord ID here",
+    "youtube": "your youtube api key here https://developers.google.com/youtube/v3/getting-started"
+}
