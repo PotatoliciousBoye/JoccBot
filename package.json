@@ -1,5 +1,5 @@
 {
-        "name": "JoccBotDev",
+        "name": "JoccBot",
         "version": "1.0.0",
         "description": "CoupJocc bot for CoupJocc stuff",
         "main": "bot.js",
@@ -8,6 +8,7 @@
                 "discord.js": "^11.5.1",
                 "ffmpeg-binaries": "^4.0.0",
                 "node-opus": "^0.3.2",
+                "youtube-playlist": "^1.0.2",
                 "youtube-search": "^1.1.4",
                 "ytdl-core": "^1.0.0"
         }
