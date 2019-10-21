@@ -3,15 +3,16 @@ const auth = require('./auth.js');
 const ytdl = require('ytdl-core');
 const config = require('./config.json');
 const fs = require('fs');
-const acceptedImageExtensions = ['jpg','png','jpeg','gif'];
-var youtubeSearch = require("youtube-search")
+const acceptedImageExtensions = ['jpg', 'png', 'jpeg', 'gif'];
+var youtubeSearch = require("youtube-search");
+var youtubePlaylist = require("youtube-playlist");
 const imagePaths = {
     cute: './Images/Cutes/',
     meme: './Images/Meme/',
     nice: './Images/Nice/',
     manga: './Images/Manga/',
     lewd: './Images/Lewd/'
-} 
+}
 const queue = new Map();
 const bot = new Discord.Client();
 var commandString, botAuthor;
@@ -22,152 +23,147 @@ var lastDMUser = new Discord.User();
 init();
 
 function InitGuilds() {
-bot.guilds.array().forEach(guild => {
-    if (!fs.existsSync('./Guilds/' + guild.id + '/'))
-        {
+    bot.guilds.array().forEach(guild => {
+        if (!fs.existsSync('./Guilds/' + guild.id + '/')) {
             fs.mkdirSync('./Guilds/' + guild.id + '/');
-            console.log('Guild directory created for ' + guild.name + ' id:' + guild.id );
+            console.log('Guild directory created for ' + guild.name + ' id:' + guild.id);
         }
         guild.members.array().forEach(member => {
-            if (!fs.existsSync('./Guilds/' + guild.id + '/' + member.id + '.json'))
-            {
-                var userDetails = { "Username" : member.user.tag, "CutieCoin" : 0,}
+            if (!fs.existsSync('./Guilds/' + guild.id + '/' + member.id + '.json')) {
+                var userDetails = { "Username": member.user.tag, "CutieCoin": 0, }
                 var detailString = JSON.stringify(userDetails)
-                fs.appendFileSync('./Guilds/' + guild.id + '/' + member.id + '.json',detailString,function(err) {
+                fs.appendFileSync('./Guilds/' + guild.id + '/' + member.id + '.json', detailString, function (err) {
                     if (err) throw err;
                 });
-                
+
                 console.log(`Created file for user : ${member.user.tag} id: ${member.id} on guild ${guild.name}.`);
             }
         });
-});
-console.log('Guilds initialized.');
+    });
+    console.log('Guilds initialized.');
 }
 
 function init() {
     var response = "", lengthTemp = 0;
 
     lengthTemp = cuteNames.length;
-    if(fs.existsSync(imagePaths.cute)){
-    console.log('Reading '+imagePaths.cute);
-    cuteNames = fs.readdirSync(imagePaths.cute,function(err,result){
-        if(err) console.log('error', err);
-    });
-    console.log(cuteNames.length + ' images loaded');
+    if (fs.existsSync(imagePaths.cute)) {
+        console.log('Reading ' + imagePaths.cute);
+        cuteNames = fs.readdirSync(imagePaths.cute, function (err, result) {
+            if (err) console.log('error', err);
+        });
+        console.log(cuteNames.length + ' images loaded');
     }
     if (cuteNames.length > lengthTemp) {
         response += ((cuteNames.length - lengthTemp) + "cute pics added.\n");
     }
 
     lengthTemp = memeNames.length;
-    if(fs.existsSync(imagePaths.meme)){
-    console.log('Reading '+ imagePaths.meme);
-    memeNames = fs.readdirSync(imagePaths.meme,function(err,result){
-        if(err) console.log('error', err);
-    });
-    console.log(memeNames.length + ' images loaded');
+    if (fs.existsSync(imagePaths.meme)) {
+        console.log('Reading ' + imagePaths.meme);
+        memeNames = fs.readdirSync(imagePaths.meme, function (err, result) {
+            if (err) console.log('error', err);
+        });
+        console.log(memeNames.length + ' images loaded');
     }
     if (memeNames.length > lengthTemp) {
         response += ((memeNames.length - lengthTemp) + "meme pics added.\n");
     }
 
     lengthTemp = niceNames.length;
-    if(fs.existsSync(imagePaths.nice)){
-    console.log('Reading '+imagePaths.nice);
-    niceNames = fs.readdirSync(imagePaths.nice,function(err,result){
-        if(err) console.log('error', err);
-    });
-    console.log(niceNames.length + ' images loaded');
+    if (fs.existsSync(imagePaths.nice)) {
+        console.log('Reading ' + imagePaths.nice);
+        niceNames = fs.readdirSync(imagePaths.nice, function (err, result) {
+            if (err) console.log('error', err);
+        });
+        console.log(niceNames.length + ' images loaded');
     }
     if (niceNames.length > lengthTemp) {
         response += ((niceNames.length - lengthTemp) + "nice pics added.\n");
     }
 
     lengthTemp = mangaNames.length;
-    if(fs.existsSync(imagePaths.manga)){
-    console.log('Reading '+imagePaths.manga);
-    mangaNames = fs.readdirSync(imagePaths.manga,function(err,result){
-        if(err) console.log('error', err);
-    });
-    console.log(mangaNames.length + ' images loaded');
+    if (fs.existsSync(imagePaths.manga)) {
+        console.log('Reading ' + imagePaths.manga);
+        mangaNames = fs.readdirSync(imagePaths.manga, function (err, result) {
+            if (err) console.log('error', err);
+        });
+        console.log(mangaNames.length + ' images loaded');
     }
     if (mangaNames.length > lengthTemp) {
         response += ((mangaNames.length - lengthTemp) + "manga pics added.\n");
     }
 
     lengthTemp = lewdNames.length;
-    if(fs.existsSync(imagePaths.lewd)){
-        console.log('Reading '+imagePaths.lewd);
-        lewdNames = fs.readdirSync(imagePaths.lewd,function(err,result){
-            if(err) console.log('error', err);
+    if (fs.existsSync(imagePaths.lewd)) {
+        console.log('Reading ' + imagePaths.lewd);
+        lewdNames = fs.readdirSync(imagePaths.lewd, function (err, result) {
+            if (err) console.log('error', err);
         });
-    console.log(lewdNames.length + ' images loaded');
+        console.log(lewdNames.length + ' images loaded');
     }
     if (lewdNames.length > lengthTemp) {
         response += ((lewdNames.length - lengthTemp) + "lewd pics added.\n");
     }
-    
+
 
     console.log('!!!All images loaded!!!');
 
     return response;
 }
 
-function GetUserDetails(userId,guildId){
+function GetUserDetails(userId, guildId) {
     var user = JSON.parse(fs.readFileSync('./Guilds/' + guildId + '/' + userId + '.json'));
     return user;
 }
-function UpdateUserDetails(userJSON,userId,guildId){
+function UpdateUserDetails(userJSON, userId, guildId) {
     var userJsonString = JSON.stringify(userJSON);
-    fs.writeFile('./Guilds/' + guildId + '/' + userId + '.json',userJsonString,err => {});
+    fs.writeFile('./Guilds/' + guildId + '/' + userId + '.json', userJsonString, err => { });
     console.log('Updated ' + userJSON.Username + '.');
 }
-function GiveCoin(userId,guildId,amount = 1){
-    var userJSON = GetUserDetails(userId,guildId);
+function GiveCoin(userId, guildId, amount = 1) {
+    var userJSON = GetUserDetails(userId, guildId);
     var currentCoin = userJSON.CutieCoin;
     currentCoin = currentCoin + amount;
     userJSON.CutieCoin = currentCoin;
-    UpdateUserDetails(userJSON,userId,guildId);
+    UpdateUserDetails(userJSON, userId, guildId);
 }
-function TransferCoin(message,amount = 1){
+function TransferCoin(message, amount = 1) {
     if (isNaN(parseInt(amount))) {
         return 'Please enter a number for amount';
     }
-    else
-    {
+    else {
         amount = parseInt(amount);
     }
-    
+
     if (!message.mentions.users.first()) {
         return 'You must mention someone to transfer coins to them.';
     }
-    var userJSON = GetUserDetails(message.author.id,message.channel.guild.id);
+    var userJSON = GetUserDetails(message.author.id, message.channel.guild.id);
     var coinOfUser = userJSON.CutieCoin;
     if ((coinOfUser - amount) < 0) {
         return 'You dont have enough coins for this transfer.';
     }
     message.reply(`Are you sure you want to give ${amount === 1 ? 'a coin' : amount + ' coins'} to ${message.mentions.users.first().tag}?`)
-    const collector = WaitResponse(message,10000,'y yes ye');
-    collector.on('collect',m => {
-        GiveCoin(message.author.id,message.channel.guild.id,(amount * -1));
-        GiveCoin(message.mentions.users.first().id,message.channel.guild.id,amount);
+    const collector = WaitResponse(message, 10000, 'y yes ye');
+    collector.on('collect', m => {
+        GiveCoin(message.author.id, message.channel.guild.id, (amount * -1));
+        GiveCoin(message.mentions.users.first().id, message.channel.guild.id, amount);
         collector.stop()
     })
     collector.on('end', collected => {
-        if(collected.size > 0)
-        {
+        if (collected.size > 0) {
             message.channel.send('Coin transfer successful!');
         }
-        else
-        {
+        else {
             message.channel.send('Coin transfer cancelled.');
         }
     })
-    
-    
+
+
 }
 
-function getRandomImage(imageType){
+function getRandomImage(imageType) {
     var targetImages, mainPath;
     switch (imageType) {
         case 'cute':
@@ -190,7 +186,7 @@ function getRandomImage(imageType){
             targetImages = lewdNames;
             mainPath = imagePaths.lewd;
             break;
-    
+
         default:
             break;
     }
@@ -200,18 +196,18 @@ function getRandomImage(imageType){
         console.log('Image ready, returning... ' + mainPath + randomImage)
         return mainPath + randomImage
     }
-    else{
+    else {
         console.log('Wrong filetype, trying again...  /' + randomImage);
         return getRandomImage(imageType)
     }
 }
 
-function getBossState(time){
+function getBossState(time) {
     if (time >= 20 || time <= 2) {
         return 'Active'
-     } else {
-         return 'Waiting...'
-     }
+    } else {
+        return 'Waiting...'
+    }
 }
 
 class Boss {
@@ -234,11 +230,11 @@ class Boss {
     }
 }
 
-function getBossDetails(){
+function getBossDetails() {
     var bossFile = fs.readFileSync('Boss.txt');
     var rows = bossFile.toString().split("\n");
     var columns = rows[0].split("|");
-    var bossDetails = new Boss(columns[0],columns[1]);
+    var bossDetails = new Boss(columns[0], columns[1]);
     var currentTime = new Date(Date.now());
     var bosstime = new Date(currentTime);
     bosstime.setHours(18);
@@ -247,28 +243,28 @@ function getBossDetails(){
     return 'Boss state: ' + getBossState(currentTime.getHours()) +
         '\nBoss name: ' + bossDetails.name +
         '\nBoss type: ' + bossDetails.lmnt.get + ' | Counter : ' + bossDetails.lmnt.counter +
-         '\nTime until next boss : ' + timeLeft.getHours() + ' hours ' + (timeLeft.getMinutes()) + ' minutes.' 
-             
+        '\nTime until next boss : ' + timeLeft.getHours() + ' hours ' + (timeLeft.getMinutes()) + ' minutes.'
+
 
 }
 
-function getBruhState(){
+function getBruhState() {
     var bruhAmount = Math.floor(Math.random() * 100);
     if (bruhAmount === 0) {
         return 'This is not a bruh moment.'
     }
-    else if(bruhAmount === 1){
+    else if (bruhAmount === 1) {
         return 'This surely is a bruh moment.'
     }
-    else if(bruhAmount === 69){
+    else if (bruhAmount === 69) {
         return 'This moment is worth 69 bruhs.Nice...'
     }
-    else{
+    else {
         return 'This moment is worth ' + bruhAmount + ' bruhs.'
     }
 }
 
-function rollDices(rollSettings){
+function rollDices(rollSettings) {
     var rollSettings = rollSettings.split('d');
     var diceCount = rollSettings[0];
     var diceSides = rollSettings[1];
@@ -277,13 +273,13 @@ function rollDices(rollSettings){
     if (diceCount === '1') {
         resultDices += 'Your ' + diceSides + ' sided dice roll is : ' + Math.floor(Math.random() * parseInt(diceSides) + 1);
     }
-    else{
+    else {
         var sum = 0;
         resultDices += 'Your ' + diceSides + ' sided dice rolls are :';
         var diceRoll = Math.floor(Math.random() * parseInt(diceSides) + 1)
         resultDices += ' ' + diceRoll;
         sum += diceRoll;
-        for (let dice = 1; dice < diceCount; dice++){
+        for (let dice = 1; dice < diceCount; dice++) {
             diceRoll = Math.floor(Math.random() * parseInt(diceSides) + 1)
             resultDices += ', ' + diceRoll;
             sum += diceRoll;
@@ -293,11 +289,11 @@ function rollDices(rollSettings){
     return resultDices;
 }
 
-function WaitResponse(Message,timer,responseWords = new String()){
+function WaitResponse(Message, timer, responseWords = new String()) {
     var responseArray = responseWords.split(',');
     console.log(`Awaiting response from ${Message.author.tag}...`)
     const filter = msg => msg.author === Message.author && responseArray.includes(msg.content);
-    const collector = Message.channel.createMessageCollector(filter,{ time: timer});
+    const collector = Message.channel.createMessageCollector(filter, { time: timer });
     var response = null;
     collector.on('collect', m => {
         response = 'Acknowledged';
@@ -310,10 +306,9 @@ function WaitResponse(Message,timer,responseWords = new String()){
     return collector
 }
 
-function CollectReactions(Message,timer)
-{
+function CollectReactions(Message, timer) {
     console.log('Collecting reactions on a message...');
-    const filter = (reaction,user) => true;
+    const filter = (reaction, user) => true;
     const collector = Message.createReactionCollector(filter, { time: timer });
     collector.on('collect', r => {
         console.log(`Collected reaction from: ${r.users.last().tag}`)
@@ -321,9 +316,9 @@ function CollectReactions(Message,timer)
     collector.on('end', collected => {
         console.log(`Collected ${collected.size} reactions`);
         collector.users.array().forEach(user => {
-            GiveCoin(user.id,Message.guild.id);
+            GiveCoin(user.id, Message.guild.id);
         });
-    } );
+    });
 }
 
 // function sleep(ms) {
@@ -331,104 +326,153 @@ function CollectReactions(Message,timer)
 //   }
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-  
+
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array);
+    }
+}
+
 //#region PlayFromYoutube
 async function execute(message, serverQueue) {
-	const args = message.content.split(' ');
+    const args = message.content.split(' ');
     var songID;
-	const voiceChannel = message.member.voiceChannel;
-	if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
-	const permissions = voiceChannel.permissionsFor(message.client.user);
-	if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-		return message.channel.send('I need the permissions to join and speak in your voice channel!');
+    var isPlaylist = false;
+    const voiceChannel = message.member.voiceChannel;
+    if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
+    const permissions = voiceChannel.permissionsFor(message.client.user);
+    if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+        return message.channel.send('I need the permissions to join and speak in your voice channel!');
     }
 
     var linkCheck = /\b(youtube.com|youtu.be)/i;
-    if(!linkCheck.test(args[1]))
-    {
-        var opts = {maxResults: 1,key: auth.getYoutubeApi,type: "video"}
+    if (!linkCheck.test(args[1])) {
+        var opts = { maxResults: 1, key: auth.getYoutubeApi }
         var search = args.slice(1);
         var searchResult;
         search = search.join(" ");
-        youtubeSearch(search,opts,function(error,result) {
+        youtubeSearch(search, opts, function (error, result) {
             searchResult = result[0];
-            });
+        });
         await sleep(1000);
         songID = searchResult.id;
+        if (searchResult.kind === 'youtube#playlist') {
+            isPlaylist = true;
+        }
+        if (searchResult.totalResults === 0) {
+            return message.channel.send("Couldn't find the queried video.");
+        }
     }
-    else 
-    {
+    else {
         songID = args[1];
     }
+    if (isPlaylist) {
+        AddPlaylistToQueue(`https://www.youtube.com/playlist?list=${songID}`, message);
+    }
+    else {
+        const song = await GetYoutubeLinkInfo(songID);
+        message.channel.send(`Playing \`${song.title}\`...`);
+        if (!serverQueue) {
+            CreateQueueandPlay(message, song);
+        } else {
+            QueueSong(song, serverQueue);
+            return message.channel.send(`\`${song.title}\` has been added to the queue!`);
+        }
+    }
 
-	const songInfo = await ytdl.getInfo(songID);
-	const song = {
-		title: songInfo.title,
-		url: songInfo.video_url,
-	};
-    message.channel.send(`Playing \`${song.title}\`...`);
-	if (!serverQueue) {
-		const queueContruct = {
-			textChannel: message.channel,
-			voiceChannel: voiceChannel,
-			connection: null,
-			songs: [],
-			volume: 5,
-			playing: true,
-		};
+}
 
-		queue.set(message.guild.id, queueContruct);
+async function AddPlaylistToQueue(playlistUrl, message) {
+    var playlist;
+    await youtubePlaylist(playlistUrl, 'id').then(res => {
+        playlist = res.data.playlist;
+        console.log(playlist);
+    });
+    if (typeof queue.get(message.guild.id) === 'undefined') {
+        CreateQueueandPlay(message, await GetYoutubeLinkInfo(playlist[0]));
+        playlist = playlist.splice(1);
+    }
+    const playlistQueue = queue.get(message.guild.id);
+    asyncForEach(playlist, async (url) => {
+        var song = await GetYoutubeLinkInfo(url);
+        QueueSong(song, playlistQueue);
+        return message.channel.send(`\`${song.title}\` has been added to the queue!`);
+    })
+}
 
-		queueContruct.songs.push(song);
-
-		try {
-			var connection = await voiceChannel.join();
-			queueContruct.connection = connection;
-			play(message.guild, queueContruct.songs[0]);
-		} catch (err) {
-			console.log(err);
-			queue.delete(message.guild.id);
-			return message.channel.send(err);
-		}
-	} else {
-		serverQueue.songs.push(song);
-		console.log(serverQueue.songs);
-		return message.channel.send(`\`${song.title}\` has been added to the queue!`);
-	}
-
+async function GetYoutubeLinkInfo(youtubeId) {
+    const songInfo = await ytdl.getInfo(youtubeId);
+    const song = {
+        title: songInfo.title,
+        url: songInfo.video_url,
+    };
+    return song;
 }
 
 function skip(message, serverQueue) {
-	if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to stop the music!');
-	if (!serverQueue) return message.channel.send('There is no song that I could skip!');
-	serverQueue.connection.dispatcher.end();
+    if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to stop the music!');
+    if (!serverQueue) return message.channel.send('There is no song that I could skip!');
+    serverQueue.connection.dispatcher.end();
 }
 
 function stop(message, serverQueue) {
-	if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to stop the music!');
-	serverQueue.songs = [];
-	serverQueue.connection.dispatcher.end();
+    if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to stop the music!');
+    serverQueue.songs = [];
+    serverQueue.connection.dispatcher.end();
 }
 
 function play(guild, song) {
-	const serverQueue = queue.get(guild.id);
+    const serverQueue = queue.get(guild.id);
 
-	if (!song) {
-		serverQueue.voiceChannel.leave();
-		queue.delete(guild.id);
-		return;
-	}
+    if (!song) {
+        serverQueue.voiceChannel.leave();
+        queue.delete(guild.id);
+        return;
+    }
 
-	const dispatcher = serverQueue.connection.playArbitraryInput(ytdl(song.url, {quality : "highestaudio", filter : "audioonly"}))
-		.on('end', () => {
-			console.log('Music ended!');
-			serverQueue.songs.shift();
-			play(guild, serverQueue.songs[0]);
-		})
-		.on('error', error => {
-			console.error(error);
-		});
-	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    const dispatcher = serverQueue.connection.playArbitraryInput(ytdl(song.url, { quality: "highestaudio", filter: "audioonly" }))
+        .on('end', () => {
+            console.log('Music ended!');
+            serverQueue.songs.shift();
+            play(guild, serverQueue.songs[0]);
+        })
+        .on('error', error => {
+            console.error(error);
+        });
+    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+
+    return serverQueue;
+}
+
+async function CreateQueueandPlay(message, song) {
+    const voiceChannel = message.member.voiceChannel;
+    const queueContruct = {
+        textChannel: message.channel,
+        voiceChannel: voiceChannel,
+        connection: null,
+        songs: [],
+        volume: 5,
+        playing: true,
+    };
+
+    queue.set(message.guild.id, queueContruct);
+
+    queueContruct.songs.push(song);
+
+    try {
+        var connection = await voiceChannel.join();
+        queueContruct.connection = connection;
+        play(message.guild, queueContruct.songs[0]);
+    } catch (err) {
+        console.log(err);
+        queue.delete(message.guild.id);
+        return message.channel.send(err);
+    }
+}
+
+function QueueSong(song, serverQueue) {
+    serverQueue.songs.push(song);
+    console.log(serverQueue.songs);
 }
 
 //#endregion
@@ -439,31 +483,30 @@ function ReturnDelay(startTime) {
 }
 
 const element = {
-    mech:{
-        get:'Mecha',
-        counter:'Psychic'
+    mech: {
+        get: 'Mecha',
+        counter: 'Psychic'
     },
-    psyc:{
-        get:'Psychic',
-        counter:'Biologic'
+    psyc: {
+        get: 'Psychic',
+        counter: 'Biologic'
     },
-    bio:{
-        get:'Biologic',
-        counter:'Mecha'
+    bio: {
+        get: 'Biologic',
+        counter: 'Mecha'
     },
-    none:'No element'
+    none: 'No element'
 }
 
-async function test(message)
-{
-    var opts = {maxResults: 1,key: auth.getYoutubeApi}
+async function test(message) {
+    var opts = { maxResults: 1, key: auth.getYoutubeApi }
     var args = message.content.split(' ');
     var search = args.slice(1);
     search = search.join(" ");
     var returns;
-    youtubeSearch(search,opts,function(error,result) {
+    youtubeSearch(search, opts, function (error, result) {
         returns = `${result[0].kind} id : ${result[0].id}   searched query : ${search}  | Title : ${result[0]}`;
-        });
+    });
     await sleep(1000);
     message.reply(returns);
 }
@@ -473,7 +516,7 @@ bot.on('ready', () => {
     InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
     bot.fetchUser(auth.getAuthor).then(user => botAuthor = user);
-  });
+});
 bot.on('guildCreate', () => {
     InitGuilds();
 });
@@ -488,133 +531,129 @@ bot.on('message', msg => {
         var cmd = args[0];
         var rollCheckRegex = /^\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(d)([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b$/;
         const serverQueue = queue.get(msg.guild.id);
-       
+
 
         args = args.splice(1);
-        if(msg.channel.type === "text")
-        {
-        switch(cmd) {
-            
-            case 'ping':
-                var d = new Date();
-                var time = d.getTime();
-                msg.channel.send('pong').then(Message => {var delay = ReturnDelay(time);  Message.edit('Response delay is ' + delay + ' ms.')});
-            break;
-            case 'test':
-                test(msg);
-            break;
-            case 'boss':
-                msg.channel.send(getBossDetails());
-            break;
-            case 'cute':
-                var attachment = new Discord.Attachment(getRandomImage('cute'));
-                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
-                console.log('Request made by ' + msg.author.tag);
-            break;
-            case 'meme':
-                var attachment = new Discord.Attachment(getRandomImage('meme'));
-                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
-                console.log('Request made by ' + msg.author.tag);
-            break;
-            case 'nice':
-                var attachment = new Discord.Attachment(getRandomImage('nice'));
-                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
-                console.log('Request made by ' + msg.author.tag);
-            break;
-            case 'manga':
-                var attachment = new Discord.Attachment(getRandomImage('manga'));
-                msg.channel.send(attachment).then(Message => { CollectReactions(Message,20000); });
-                console.log('Request made by ' + msg.author.tag);
-            break;
-            case 'lewd':
-            case 'nsfw':
-                var attachment = new Discord.Attachment(getRandomImage('lewd'));
-                msg.channel.send(attachment);
-                console.log('Request made by ' + msg.author.tag);
-            break;
+        if (msg.channel.type === "text") {
+            switch (cmd) {
 
-            case 'reinit':
-                var response = init();
-                msg.channel.send('reinitialize complete. \n' + response);
-                break;
+                case 'ping':
+                    var d = new Date();
+                    var time = d.getTime();
+                    msg.channel.send('pong').then(Message => { var delay = ReturnDelay(time); Message.edit('Response delay is ' + delay + ' ms.') });
+                    break;
+                case 'test':
+                    test(msg);
+                    break;
+                case 'boss':
+                    msg.channel.send(getBossDetails());
+                    break;
+                case 'cute':
+                    var attachment = new Discord.Attachment(getRandomImage('cute'));
+                    msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
+                    console.log('Request made by ' + msg.author.tag);
+                    break;
+                case 'meme':
+                    var attachment = new Discord.Attachment(getRandomImage('meme'));
+                    msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
+                    console.log('Request made by ' + msg.author.tag);
+                    break;
+                case 'nice':
+                    var attachment = new Discord.Attachment(getRandomImage('nice'));
+                    msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
+                    console.log('Request made by ' + msg.author.tag);
+                    break;
+                case 'manga':
+                    var attachment = new Discord.Attachment(getRandomImage('manga'));
+                    msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
+                    console.log('Request made by ' + msg.author.tag);
+                    break;
+                case 'lewd':
+                case 'nsfw':
+                    var attachment = new Discord.Attachment(getRandomImage('lewd'));
+                    msg.channel.send(attachment);
+                    console.log('Request made by ' + msg.author.tag);
+                    break;
 
-            case 'givecoin':
-                var response = TransferCoin(msg,args[1]);
-                if (response != null) {
-                    msg.reply(response);    
-                }
-                break;
+                case 'reinit':
+                    var response = init();
+                    msg.channel.send('reinitialize complete. \n' + response);
+                    break;
 
-
-            case 'music':
-                var musicType = args[0];
-                var link = args[1];
-                if (musicType === 'swing'|| musicType === 'cafe') {
-                    if (msg.member.voiceChannel) {
-                        msg.member.voiceChannel.join()
-                            .then(connection => { // Connection is an instance of VoiceConnection
-                                msg.reply(`Started playing ${musicType} stream...`);
-                                const dispatcher = connection.playArbitraryInput(`http://lainon.life:8000/${musicType}.mp3`);
-                            })
-                        .catch(console.log);
-                    } else {
-                      msg.reply('You need to join a voice channel first!');
+                case 'givecoin':
+                    var response = TransferCoin(msg, args[1]);
+                    if (response != null) {
+                        msg.reply(response);
                     }
-                }
-                else if (musicType === 'leave')
-                {
-                    if (msg.guild.me.voiceChannel !== undefined) {
-                        msg.guild.me.voiceChannel.leave();
+                    break;
+
+
+                case 'music':
+                    var musicType = args[0];
+                    var link = args[1];
+                    if (musicType === 'swing' || musicType === 'cafe') {
+                        if (msg.member.voiceChannel) {
+                            msg.member.voiceChannel.join()
+                                .then(connection => { // Connection is an instance of VoiceConnection
+                                    msg.reply(`Started playing ${musicType} stream...`);
+                                    const dispatcher = connection.playArbitraryInput(`http://lainon.life:8000/${musicType}.mp3`);
+                                })
+                                .catch(console.log);
+                        } else {
+                            msg.reply('You need to join a voice channel first!');
+                        }
                     }
-                }
-                else if (musicType === 'link')
-                {
-                    if (msg.member.voiceChannel) {
-                        msg.member.voiceChannel.join()
-                            .then(connection => { // Connection is an instance of VoiceConnection
-                                msg.reply(`Started playing music on ${link}...`);
-                                const dispatcher = connection.playArbitraryInput(link);
-                            })
-                        .catch(console.log);
-                    } else {
-                      msg.reply('You need to join a voice channel first!');
+                    else if (musicType === 'leave') {
+                        if (msg.guild.me.voiceChannel !== undefined) {
+                            msg.guild.me.voiceChannel.leave();
+                        }
                     }
-                }
-                else
-                {
-                    msg.reply(`Please use \"${commandString}music [MusicType]\" to start streaming. Available musictypes: swing, cafe`);
-                }
-                
-                break;
+                    else if (musicType === 'link') {
+                        if (msg.member.voiceChannel) {
+                            msg.member.voiceChannel.join()
+                                .then(connection => { // Connection is an instance of VoiceConnection
+                                    msg.reply(`Started playing music on ${link}...`);
+                                    const dispatcher = connection.playArbitraryInput(link);
+                                })
+                                .catch(console.log);
+                        } else {
+                            msg.reply('You need to join a voice channel first!');
+                        }
+                    }
+                    else {
+                        msg.reply(`Please use \"${commandString}music [MusicType]\" to start streaming. Available musictypes: swing, cafe`);
+                    }
 
-            case 'play':
-            case 'p':
-                execute(msg,serverQueue);
-                break;
-            case 'skip':
-            case 's':
-                skip(msg,serverQueue);
-                break;
-            case 'stop':
-                stop(msg,serverQueue);
-                break;  
+                    break;
+
+                case 'play':
+                case 'p':
+                    execute(msg, serverQueue);
+                    break;
+                case 'skip':
+                case 's':
+                    skip(msg, serverQueue);
+                    break;
+                case 'stop':
+                    stop(msg, serverQueue);
+                    break;
 
 
-            case 'do a flip':
-                msg.channel.send('flips u r mather xD');
-                break;
-            case 'bruh':
-                msg.channel.send(getBruhState());
-                break;
-            case 'shutdown':
-                msg.channel.send('okay :(');
-                bot.destroy();
-         }
+                case 'do a flip':
+                    msg.channel.send('flips u r mather xD');
+                    break;
+                case 'bruh':
+                    msg.channel.send(getBruhState());
+                    break;
+                case 'shutdown':
+                    msg.channel.send('okay :(');
+                    bot.destroy();
+            }
         }
-        
-         if (rollCheckRegex.test(cmd)) {
+
+        if (rollCheckRegex.test(cmd)) {
             msg.channel.send(rollDices(cmd));
-         }
+        }
     }
     if (msg.channel.type === "dm") {
         if (msg.author === lastDMUser) {
@@ -632,23 +671,23 @@ bot.on('message', msg => {
     if (msg.content.toLowerCase() === 'ayy') {
         msg.channel.send('lmao');
     }
-//
+    //
     if (msg.author != bot.user && msg.attachments.size > 1 && acceptedImageExtensions.includes(msg.attachments.first().filename.split('.')[1])) {
-        CollectReactions(msg,20000);
+        CollectReactions(msg, 20000);
     }
     if (msg.content === 'Save this image^') {
-        msg.channel.fetchMessages({limit: 1, before : msg.id})
+        msg.channel.fetchMessages({ limit: 1, before: msg.id })
             .then(message => {
                 if (message.first().attachments.size === 0) {
                     msg.channel.send("That's not an image that I can save!");
                 }
-                else{
+                else {
                     var messageAttachments = message.first().attachments;
                     var saveChannel = bot.channels.get("629578376088256512");
                     messageAttachments.forEach(messageAttachment => {
-                        saveChannel.send({file : messageAttachment.url});
-                    msg.channel.send("Done!");
-                });
+                        saveChannel.send({ file: messageAttachment.url });
+                        msg.channel.send("Done!");
+                    });
                 }
             })
             .catch(console.error);
@@ -659,6 +698,6 @@ bot.on('message', msg => {
 process.on('uncaughtException', function (err) {
     botAuthor.createDM().then(channel => channel.send(`Bot died with exception: ${err}`));
     bot.destroy();
-  });
+});
 
 bot.login(auth.getToken());
