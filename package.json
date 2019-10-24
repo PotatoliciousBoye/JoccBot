@@ -1,5 +1,5 @@
 {
-        "name": "JoccBot",
+        "name": "joccbot",
         "version": "1.0.0",
         "description": "CoupJocc bot for CoupJocc stuff",
         "main": "bot.js",

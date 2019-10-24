@@ -1,11 +1,15 @@
+//#region required libs
 const Discord = require('discord.js');
 const auth = require('./auth.js');
 const ytdl = require('ytdl-core');
 const config = require('./config.json');
 const fs = require('fs');
-const acceptedImageExtensions = ['jpg', 'png', 'jpeg', 'gif'];
+const streamLinks = require('./streamlinks.json');
 var youtubeSearch = require("youtube-search");
 var youtubePlaylist = require("youtube-playlist");
+//#endregion
+//#region global parameters
+const acceptedImageExtensions = ['jpg', 'png', 'jpeg', 'gif'];
 const imagePaths = {
     cute: './Images/Cutes/',
     meme: './Images/Meme/',
@@ -20,8 +24,9 @@ config.environment === 'LIV' ? commandString = '~' : commandString = '-';
 var cuteNames = memeNames = niceNames = mangaNames = lewdNames = new Array();
 var lastDM = new Discord.Message();
 var lastDMUser = new Discord.User();
-init();
-
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+//#endregion
+//#region init
 function InitGuilds() {
     bot.guilds.array().forEach(guild => {
         if (!fs.existsSync('./Guilds/' + guild.id + '/')) {
@@ -43,7 +48,7 @@ function InitGuilds() {
     console.log('Guilds initialized.');
 }
 
-function init() {
+function Init() {
     var response = "", lengthTemp = 0;
 
     lengthTemp = cuteNames.length;
@@ -111,6 +116,13 @@ function init() {
 
     return response;
 }
+//#endregion
+
+function AddStreamLink(url,name,streamJson)
+{
+streamJson[name] = url;
+fs.writeFile('./streamLinks.json',JSON.stringify(streamJson),err => {console.log(`Error while updating stream json file. Ex : ${err}`)});
+}
 
 function GetUserDetails(userId, guildId) {
     var user = JSON.parse(fs.readFileSync('./Guilds/' + guildId + '/' + userId + '.json'));
@@ -163,7 +175,7 @@ function TransferCoin(message, amount = 1) {
 
 }
 
-function getRandomImage(imageType) {
+function GetRandomImage(imageType) {
     var targetImages, mainPath;
     switch (imageType) {
         case 'cute':
@@ -198,11 +210,11 @@ function getRandomImage(imageType) {
     }
     else {
         console.log('Wrong filetype, trying again...  /' + randomImage);
-        return getRandomImage(imageType)
+        return GetRandomImage(imageType)
     }
 }
 
-function getBossState(time) {
+function GetBossState(time) {
     if (time >= 20 || time <= 2) {
         return 'Active'
     } else {
@@ -210,45 +222,8 @@ function getBossState(time) {
     }
 }
 
-class Boss {
-    constructor(lmnt, name) {
-        this.name = name;
-        switch (lmnt) {
-            case 'mech':
-                this.lmnt = element.mech;
-                break;
-            case 'psyc':
-                this.lmnt = element.psyc;
-                break;
-            case 'bio':
-                this.lmnt = element.bio;
-                break;
-            default:
-                this.lmnt = element.none;
-                break;
-        }
-    }
-}
 
-function getBossDetails() {
-    var bossFile = fs.readFileSync('Boss.txt');
-    var rows = bossFile.toString().split("\n");
-    var columns = rows[0].split("|");
-    var bossDetails = new Boss(columns[0], columns[1]);
-    var currentTime = new Date(Date.now());
-    var bosstime = new Date(currentTime);
-    bosstime.setHours(18);
-    bosstime.setMinutes(00);
-    var timeLeft = new Date(bosstime - currentTime);
-    return 'Boss state: ' + getBossState(currentTime.getHours()) +
-        '\nBoss name: ' + bossDetails.name +
-        '\nBoss type: ' + bossDetails.lmnt.get + ' | Counter : ' + bossDetails.lmnt.counter +
-        '\nTime until next boss : ' + timeLeft.getHours() + ' hours ' + (timeLeft.getMinutes()) + ' minutes.'
-
-
-}
-
-function getBruhState() {
+function GetBruhState() {
     var bruhAmount = Math.floor(Math.random() * 100);
     if (bruhAmount === 0) {
         return 'This is not a bruh moment.'
@@ -264,7 +239,7 @@ function getBruhState() {
     }
 }
 
-function rollDices(rollSettings) {
+function RollDices(rollSettings) {
     var rollSettings = rollSettings.split('d');
     var diceCount = rollSettings[0];
     var diceSides = rollSettings[1];
@@ -321,13 +296,7 @@ function CollectReactions(Message, timer) {
     });
 }
 
-// function sleep(ms) {
-//     return new Promise(resolve => setTimeout(resolve, ms));
-//   }
-
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-
-async function asyncForEach(array, callback) {
+async function AsyncForEach(array, callback) {
     for (let index = 0; index < array.length; index++) {
         await callback(array[index], index, array);
     }
@@ -399,7 +368,7 @@ async function AddPlaylistToQueue(playlistUrl, message) {
         playlist = playlist.splice(1);
     }
     const playlistQueue = queue.get(message.guild.id);
-    asyncForEach(playlist, async (url) => {
+    AsyncForEach(playlist, async (url) => {
         var song = {
             title: url.name,
             url: url.url,
@@ -491,23 +460,7 @@ function ReturnDelay(startTime) {
     return d.getTime() - startTime;
 }
 
-const element = {
-    mech: {
-        get: 'Mecha',
-        counter: 'Psychic'
-    },
-    psyc: {
-        get: 'Psychic',
-        counter: 'Biologic'
-    },
-    bio: {
-        get: 'Biologic',
-        counter: 'Mecha'
-    },
-    none: 'No element'
-}
-
-async function test(message) {
+async function Test(message) {
     var opts = { maxResults: 1, key: auth.getYoutubeApi }
     var args = message.content.split(' ');
     var search = args.slice(1);
@@ -522,6 +475,7 @@ async function test(message) {
 //
 // Initialize Discord Bot
 bot.on('ready', () => {
+    Init();
     InitGuilds();
     console.log(`Logged in as ${bot.user.tag}!`);
     bot.fetchUser(auth.getAuthor).then(user => botAuthor = user);
@@ -552,40 +506,37 @@ bot.on('message', msg => {
                     msg.channel.send('pong').then(Message => { var delay = ReturnDelay(time); Message.edit('Response delay is ' + delay + ' ms.') });
                     break;
                 case 'test':
-                    test(msg);
-                    break;
-                case 'boss':
-                    msg.channel.send(getBossDetails());
+                    Test(msg);
                     break;
                 case 'cute':
-                    var attachment = new Discord.Attachment(getRandomImage('cute'));
+                    var attachment = new Discord.Attachment(GetRandomImage('cute'));
                     msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
                     console.log('Request made by ' + msg.author.tag);
                     break;
                 case 'meme':
-                    var attachment = new Discord.Attachment(getRandomImage('meme'));
+                    var attachment = new Discord.Attachment(GetRandomImage('meme'));
                     msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
                     console.log('Request made by ' + msg.author.tag);
                     break;
                 case 'nice':
-                    var attachment = new Discord.Attachment(getRandomImage('nice'));
+                    var attachment = new Discord.Attachment(GetRandomImage('nice'));
                     msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
                     console.log('Request made by ' + msg.author.tag);
                     break;
                 case 'manga':
-                    var attachment = new Discord.Attachment(getRandomImage('manga'));
+                    var attachment = new Discord.Attachment(GetRandomImage('manga'));
                     msg.channel.send(attachment).then(Message => { CollectReactions(Message, 20000); });
                     console.log('Request made by ' + msg.author.tag);
                     break;
                 case 'lewd':
                 case 'nsfw':
-                    var attachment = new Discord.Attachment(getRandomImage('lewd'));
+                    var attachment = new Discord.Attachment(GetRandomImage('lewd'));
                     msg.channel.send(attachment);
                     console.log('Request made by ' + msg.author.tag);
                     break;
 
                 case 'reinit':
-                    var response = init();
+                    var response = Init();
                     msg.channel.send('reinitialize complete. \n' + response);
                     break;
 
@@ -600,37 +551,48 @@ bot.on('message', msg => {
                 case 'music':
                     var musicType = args[0];
                     var link = args[1];
-                    if (musicType === 'swing' || musicType === 'cafe') {
-                        if (msg.member.voiceChannel) {
-                            msg.member.voiceChannel.join()
-                                .then(connection => { // Connection is an instance of VoiceConnection
-                                    msg.reply(`Started playing ${musicType} stream...`);
-                                    const dispatcher = connection.playArbitraryInput(`http://lainon.life:8000/${musicType}.mp3`);
-                                })
-                                .catch(console.log);
-                        } else {
-                            msg.reply('You need to join a voice channel first!');
-                        }
-                    }
-                    else if (musicType === 'leave') {
-                        if (msg.guild.me.voiceChannel !== undefined) {
+
+                    if (musicType === 'leave') {
+                        if (typeof msg.guild.me.voiceChannel !== 'undefined') {
                             msg.guild.me.voiceChannel.leave();
+                            return msg.channel.send('Leaving voicechat...');
                         }
                     }
                     else if (musicType === 'link') {
                         if (msg.member.voiceChannel) {
                             msg.member.voiceChannel.join()
                                 .then(connection => { // Connection is an instance of VoiceConnection
-                                    msg.reply(`Started playing music on ${link}...`);
-                                    const dispatcher = connection.playArbitraryInput(link);
+                                    try {
+                                        const dispatcher = connection.playArbitraryInput(link);
+                                        return msg.channel.send(`Started playing music on ${link}...`);    
+                                    } catch (error) {
+                                        return msg.reply(`Could not resolve the stream on link.`);
+                                    }
+                                    
                                 })
                                 .catch(console.log);
                         } else {
                             msg.reply('You need to join a voice channel first!');
                         }
                     }
-                    else {
-                        msg.reply(`Please use \"${commandString}music [MusicType]\" to start streaming. Available musictypes: swing, cafe`);
+                    else if (musicType === 'add') {
+                        AddStreamLink(args[2],args[1],streamLinks);
+                        return msg.channel.send(`Added link : ${args[2]} under name : ${args[1]}.`);
+                    }
+                    else if (msg.member.voiceChannel) {
+                        msg.member.voiceChannel.join()
+                            .then(connection => { // Connection is an instance of VoiceConnection
+                                try {
+                                    const dispatcher = connection.playArbitraryInput(streamLinks[musicType]);
+                                    return msg.reply(`Started playing ${musicType} stream...`);
+                                } catch (error) {
+                                    return msg.reply(`Invalid music type. Available musictypes: ${Object.keys(streamLinks)}`);
+                                }
+
+                            })
+                            .catch(console.log);
+                    } else {
+                        msg.reply('You need to join a voice channel first!');
                     }
 
                     break;
@@ -652,7 +614,7 @@ bot.on('message', msg => {
                     msg.channel.send('flips u r mather xD');
                     break;
                 case 'bruh':
-                    msg.channel.send(getBruhState());
+                    msg.channel.send(GetBruhState());
                     break;
                 case 'shutdown':
                     msg.channel.send('okay :(');
@@ -661,7 +623,7 @@ bot.on('message', msg => {
         }
 
         if (rollCheckRegex.test(cmd)) {
-            msg.channel.send(rollDices(cmd));
+            msg.channel.send(RollDices(cmd));
         }
     }
     if (msg.channel.type === "dm") {
