@@ -345,29 +345,35 @@ async function execute(message, serverQueue) {
         return message.channel.send('I need the permissions to join and speak in your voice channel!');
     }
 
+    var playListCheck = /\b(list=)/i;
     var linkCheck = /\b(youtube.com|youtu.be)/i;
     if (!linkCheck.test(args[1])) {
-        var opts = { maxResults: 1, key: auth.getYoutubeApi }
+        var opts = { maxResults: 1, key: auth.getYoutubeApi, type: 'video,playlist' }
         var search = args.slice(1);
         var searchResult;
         search = search.join(" ");
         youtubeSearch(search, opts, function (error, result) {
             searchResult = result[0];
         });
-        await sleep(1000);
+        await sleep(600);
         songID = searchResult.id;
         if (searchResult.kind === 'youtube#playlist') {
             isPlaylist = true;
+            songID = `https://www.youtube.com/playlist?list=${songID}`;
         }
         if (searchResult.totalResults === 0) {
             return message.channel.send("Couldn't find the queried video.");
         }
     }
+    else if (playListCheck.test(args[1])) {
+        isPlaylist = true;
+        songID = args[1];
+    }
     else {
         songID = args[1];
     }
     if (isPlaylist) {
-        AddPlaylistToQueue(`https://www.youtube.com/playlist?list=${songID}`, message);
+        AddPlaylistToQueue(songID, message);
     }
     else {
         const song = await GetYoutubeLinkInfo(songID);
@@ -384,17 +390,20 @@ async function execute(message, serverQueue) {
 
 async function AddPlaylistToQueue(playlistUrl, message) {
     var playlist;
-    await youtubePlaylist(playlistUrl, 'id').then(res => {
+    await youtubePlaylist(playlistUrl, ['url', 'name']).then(res => {
         playlist = res.data.playlist;
         console.log(playlist);
     });
     if (typeof queue.get(message.guild.id) === 'undefined') {
-        CreateQueueandPlay(message, await GetYoutubeLinkInfo(playlist[0]));
+        CreateQueueandPlay(message, await GetYoutubeLinkInfo(playlist[0].url));
         playlist = playlist.splice(1);
     }
     const playlistQueue = queue.get(message.guild.id);
     asyncForEach(playlist, async (url) => {
-        var song = await GetYoutubeLinkInfo(url);
+        var song = {
+            title: url.name,
+            url: url.url,
+        };
         QueueSong(song, playlistQueue);
         return message.channel.send(`\`${song.title}\` has been added to the queue!`);
     })
