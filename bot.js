@@ -118,10 +118,9 @@ function Init() {
 }
 //#endregion
 
-function AddStreamLink(url,name,streamJson)
-{
-streamJson[name] = url;
-fs.writeFile('./streamLinks.json',JSON.stringify(streamJson),err => {console.log(`Error while updating stream json file. Ex : ${err}`)});
+function AddStreamLink(url, name, streamJson) {
+    streamJson[name] = url;
+    fs.writeFile('./streamLinks.json', JSON.stringify(streamJson), err => { console.log(`Error while updating stream json file. Ex : ${err}`) });
 }
 
 function GetUserDetails(userId, guildId) {
@@ -460,17 +459,28 @@ function ReturnDelay(startTime) {
     return d.getTime() - startTime;
 }
 
-async function Test(message) {
-    var opts = { maxResults: 1, key: auth.getYoutubeApi }
-    var args = message.content.split(' ');
-    var search = args.slice(1);
-    search = search.join(" ");
-    var returns;
-    youtubeSearch(search, opts, function (error, result) {
-        returns = `${result[0].kind} id : ${result[0].id}   searched query : ${search}  | Title : ${result[0]}`;
+async function Test(message,msg) {
+    const testVC = bot.channels.get("606080679742144525");
+    testVC.join().then(connection => {
+        var isSpeaking = false;
+        var tests = 0;
+        connection.playArbitraryInput(message);
+        var interval = setInterval(() => {
+            if (connection.speaking === true) {
+                clearInterval(interval);
+                msg.edit("test success");
+                testVC.leave();
+                return console.log("test success");
+            }
+            if (tests > 10) {
+                clearInterval(interval);
+                msg.edit("test faile");
+                testVC.leave();
+                return console.log("test failed");
+            }
+            tests++;
+        }, 1000);
     });
-    await sleep(1000);
-    message.reply(returns);
 }
 //
 // Initialize Discord Bot
@@ -506,7 +516,8 @@ bot.on('message', msg => {
                     msg.channel.send('pong').then(Message => { var delay = ReturnDelay(time); Message.edit('Response delay is ' + delay + ' ms.') });
                     break;
                 case 'test':
-                    Test(msg);
+                    msg.channel.send("testing").then(message => {
+                        Test(args[0],message);})
                     break;
                 case 'cute':
                     var attachment = new Discord.Attachment(GetRandomImage('cute'));
@@ -564,11 +575,11 @@ bot.on('message', msg => {
                                 .then(connection => { // Connection is an instance of VoiceConnection
                                     try {
                                         const dispatcher = connection.playArbitraryInput(link);
-                                        return msg.channel.send(`Started playing music on ${link}...`);    
+                                        return msg.channel.send(`Started playing music on ${link}...`);
                                     } catch (error) {
                                         return msg.reply(`Could not resolve the stream on link.`);
                                     }
-                                    
+
                                 })
                                 .catch(console.log);
                         } else {
@@ -576,7 +587,7 @@ bot.on('message', msg => {
                         }
                     }
                     else if (musicType === 'add') {
-                        AddStreamLink(args[2],args[1],streamLinks);
+                        AddStreamLink(args[2], args[1], streamLinks);
                         return msg.channel.send(`Added link : ${args[2]} under name : ${args[1]}.`);
                     }
                     else if (msg.member.voiceChannel) {
