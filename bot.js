@@ -118,9 +118,32 @@ function Init() {
 }
 //#endregion
 
-function AddStreamLink(url, name, streamJson) {
+function AddStreamLink(url, name,msg) {
     streamJson[name] = url;
-    fs.writeFile('./streamLinks.json', JSON.stringify(streamJson), err => { console.log(`Error while updating stream json file. Ex : ${err}`) });
+    fs.writeFile('./streamLinks.json', JSON.stringify(streamLinks), err => { console.log(`Error while updating stream json file. Ex : ${err}`) });
+    msg.edit(`Added '${url}' to stream links as '${name}'`);
+}
+
+async function TestLinkandExecute(url, msg, func, param) {
+    const testVC = bot.channels.get(auth.getTestId);
+    var connection = await testVC.join()
+    var tests = 0;
+    connection.playArbitraryInput(url);
+    var interval = setInterval(() => {
+        if (connection.speaking === true) {
+            clearInterval(interval);
+            msg.edit("Test success");
+            testVC.leave();
+            return func("success",url,param,msg);
+        }
+        if (tests > 10) {
+            clearInterval(interval);
+            msg.edit("I could not find the stream on the link, please try with another");
+            testVC.leave();
+        }
+        tests++;
+    }, 1000);
+
 }
 
 function GetUserDetails(userId, guildId) {
@@ -459,28 +482,28 @@ function ReturnDelay(startTime) {
     return d.getTime() - startTime;
 }
 
-async function Test(message,msg) {
-    const testVC = bot.channels.get("606080679742144525");
-    testVC.join().then(connection => {
-        var isSpeaking = false;
-        var tests = 0;
-        connection.playArbitraryInput(message);
-        var interval = setInterval(() => {
-            if (connection.speaking === true) {
-                clearInterval(interval);
-                msg.edit("test success");
-                testVC.leave();
-                return console.log("test success");
-            }
-            if (tests > 10) {
-                clearInterval(interval);
-                msg.edit("test faile");
-                testVC.leave();
-                return console.log("test failed");
-            }
-            tests++;
-        }, 1000);
-    });
+async function Test(url, msg, func, param) {
+    const testVC = bot.channels.get(auth.getTestId);
+    var connection = await testVC.join()
+    var isSpeaking = false;
+    var tests = 0;
+    connection.playArbitraryInput(url);
+    var interval = setInterval(() => {
+        if (connection.speaking === true) {
+            clearInterval(interval);
+            msg.edit("test success");
+            testVC.leave();
+            return func(["success",url], param);
+        }
+        if (tests > 10) {
+            clearInterval(interval);
+            msg.edit("test faile");
+            testVC.leave();
+            return func(["failed",url], param);
+        }
+        tests++;
+    }, 1000);
+
 }
 //
 // Initialize Discord Bot
@@ -517,7 +540,8 @@ bot.on('message', msg => {
                     break;
                 case 'test':
                     msg.channel.send("testing").then(message => {
-                        Test(args[0],message);})
+                        Test(args[0], message,console.log);
+                    })
                     break;
                 case 'cute':
                     var attachment = new Discord.Attachment(GetRandomImage('cute'));
@@ -587,8 +611,10 @@ bot.on('message', msg => {
                         }
                     }
                     else if (musicType === 'add') {
-                        AddStreamLink(args[2], args[1], streamLinks);
-                        return msg.channel.send(`Added link : ${args[2]} under name : ${args[1]}.`);
+                        msg.channel.send("Validating the stream link...").then(message => {
+                            TestLinkandExecute(link,message,AddStreamLink,args[2]);
+                        })
+                        break;
                     }
                     else if (msg.member.voiceChannel) {
                         msg.member.voiceChannel.join()
