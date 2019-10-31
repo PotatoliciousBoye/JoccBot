@@ -13,5 +13,9 @@ module.exports = {
     
     getAuthor: tokens.author,
 
-    getYoutubeApi: tokens.youtube
+    getYoutubeApi: tokens.youtube,
+
+    getTestId: tokens.testVC,
+
+    getTestServerId: tokens.testServer
 }
