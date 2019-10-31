@@ -118,23 +118,33 @@ function Init() {
 }
 //#endregion
 
-function AddStreamLink(url, name,msg) {
-    streamJson[name] = url;
-    fs.writeFile('./streamLinks.json', JSON.stringify(streamLinks), err => { console.log(`Error while updating stream json file. Ex : ${err}`) });
-    msg.edit(`Added '${url}' to stream links as '${name}'`);
+function AddStreamLink(testResult, url, name, msg) {
+    if (testResult === "success") {
+        streamLinks[name] = url;
+        fs.writeFile('./streamLinks.json', JSON.stringify(streamLinks), err => {});
+        msg.edit(`Added '${url}' to stream links as '${name}'.`);    
+    }
+    else{
+        msg.edit(`The test has failed.`);
+    }
 }
 
 async function TestLinkandExecute(url, msg, func, param) {
+
+    const testServer = bot.guilds.get(auth.getTestServerId);
     const testVC = bot.channels.get(auth.getTestId);
+    if (testServer.me.voiceChannel === testVC) {
+        return msg.edit("There is already a test going on, please try again later.");
+    }
     var connection = await testVC.join()
     var tests = 0;
     connection.playArbitraryInput(url);
     var interval = setInterval(() => {
         if (connection.speaking === true) {
             clearInterval(interval);
-            msg.edit("Test success");
+            msg.edit("Test success").then(message => {
+                func("success", url, param, message);});
             testVC.leave();
-            return func("success",url,param,msg);
         }
         if (tests > 10) {
             clearInterval(interval);
@@ -493,13 +503,13 @@ async function Test(url, msg, func, param) {
             clearInterval(interval);
             msg.edit("test success");
             testVC.leave();
-            return func(["success",url], param);
+            return func(["success", url], param);
         }
         if (tests > 10) {
             clearInterval(interval);
             msg.edit("test faile");
             testVC.leave();
-            return func(["failed",url], param);
+            return func(["failed", url], param);
         }
         tests++;
     }, 1000);
@@ -540,7 +550,7 @@ bot.on('message', msg => {
                     break;
                 case 'test':
                     msg.channel.send("testing").then(message => {
-                        Test(args[0], message,console.log);
+                        AddStreamLink("success",args[0],args[1],message);
                     })
                     break;
                 case 'cute':
@@ -611,8 +621,14 @@ bot.on('message', msg => {
                         }
                     }
                     else if (musicType === 'add') {
+                        if (typeof streamLinks[args[2]] !== 'undefined') {
+                            return msg.channel.send("Provided name already has a link saved under it.")
+                        }
+                        if (typeof args[2] === 'undefined' || typeof link === 'undefined') {
+                            return msg.channel.send("Please provide both a link and a name to use.");
+                        }
                         msg.channel.send("Validating the stream link...").then(message => {
-                            TestLinkandExecute(link,message,AddStreamLink,args[2]);
+                            TestLinkandExecute(link, message, AddStreamLink, args[2]);
                         })
                         break;
                     }
