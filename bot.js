@@ -125,7 +125,7 @@ function AddStreamLink(testResult, url, name, msg) {
         msg.edit(`Added '${url}' to stream links as '${name}'.`);
     }
     else {
-        msg.edit(`The test has failed.`);
+        msg.edit(`An invalid link was provided.`);
     }
 }
 
@@ -137,23 +137,10 @@ async function TestLinkandExecute(url, msg, func, param) {
         return msg.edit("There is already a test going on, please try again later.");
     }
     var connection = await testVC.join()
-    var tests = 0;
-    connection.playArbitraryInput(url);
-    var interval = setInterval(() => {
-        if (connection.speaking === true) {
-            clearInterval(interval);
-            msg.edit("Test success").then(message => {
-                func("success", url, param, message);
-            });
-            testVC.leave();
-        }
-        if (tests > 10) {
-            clearInterval(interval);
-            msg.edit("I could not find the stream on the link, please try with another");
-            testVC.leave();
-        }
-        tests++;
-    }, 1000);
+    var isSuccess = false;
+    const dispatcher = connection.playArbitraryInput(url);
+    dispatcher.on('speaking', val => { if (val === true) { func("success", url, param, msg); isSuccess = true; testVC.leave() } });
+    dispatcher.on('end', () => { if (isSuccess === false) { func("fail", url, param, msg); testVC.leave() } });
 
 }
 
@@ -499,8 +486,8 @@ async function Test(url, msg, func, param) {
     var isSuccess = false;
     var tests = 0;
     const dispatcher = connection.playArbitraryInput(url);
-    dispatcher.on('speaking', val => {if(val === true) { console.log("succcbruh"); isSuccess = true; testVC.leave()}});
-    dispatcher.on('end', () => { if(isSuccess === false) { console.log("bruh"); testVC.leave()}});
+    dispatcher.on('speaking', val => { if (val === true) { console.log("success"); isSuccess = true; testVC.leave() } });
+    dispatcher.on('end', () => { if (isSuccess === false) { console.log("failed"); testVC.leave() } });
     // var interval = setInterval(() => {
     //     if (connection.speaking === true) {
     //         clearInterval(interval);
