@@ -121,11 +121,11 @@ function Init() {
 function AddStreamLink(testResult, url, name, msg) {
     if (testResult === "success") {
         streamLinks[name] = url;
-        fs.writeFile('./streamLinks.json', JSON.stringify(streamLinks), err => {});
-        msg.edit(`Added '${url}' to stream links as '${name}'.`);    
+        fs.writeFile('./streamLinks.json', JSON.stringify(streamLinks), err => { });
+        msg.edit(`Added '${url}' to stream links as '${name}'.`);
     }
-    else{
-        msg.edit(`The test has failed.`);
+    else {
+        msg.edit(`An invalid link was provided.`);
     }
 }
 
@@ -137,22 +137,10 @@ async function TestLinkandExecute(url, msg, func, param) {
         return msg.edit("There is already a test going on, please try again later.");
     }
     var connection = await testVC.join()
-    var tests = 0;
-    connection.playArbitraryInput(url);
-    var interval = setInterval(() => {
-        if (connection.speaking === true) {
-            clearInterval(interval);
-            msg.edit("Test success").then(message => {
-                func("success", url, param, message);});
-            testVC.leave();
-        }
-        if (tests > 10) {
-            clearInterval(interval);
-            msg.edit("I could not find the stream on the link, please try with another");
-            testVC.leave();
-        }
-        tests++;
-    }, 1000);
+    var isSuccess = false;
+    const dispatcher = connection.playArbitraryInput(url);
+    dispatcher.on('speaking', val => { if (val === true) { func("success", url, param, msg); isSuccess = true; testVC.leave() } });
+    dispatcher.on('end', () => { if (isSuccess === false) { func("fail", url, param, msg); testVC.leave() } });
 
 }
 
@@ -495,24 +483,26 @@ function ReturnDelay(startTime) {
 async function Test(url, msg, func, param) {
     const testVC = bot.channels.get(auth.getTestId);
     var connection = await testVC.join()
-    var isSpeaking = false;
+    var isSuccess = false;
     var tests = 0;
-    connection.playArbitraryInput(url);
-    var interval = setInterval(() => {
-        if (connection.speaking === true) {
-            clearInterval(interval);
-            msg.edit("test success");
-            testVC.leave();
-            return func(["success", url], param);
-        }
-        if (tests > 10) {
-            clearInterval(interval);
-            msg.edit("test faile");
-            testVC.leave();
-            return func(["failed", url], param);
-        }
-        tests++;
-    }, 1000);
+    const dispatcher = connection.playArbitraryInput(url);
+    dispatcher.on('speaking', val => { if (val === true) { console.log("success"); isSuccess = true; testVC.leave() } });
+    dispatcher.on('end', () => { if (isSuccess === false) { console.log("failed"); testVC.leave() } });
+    // var interval = setInterval(() => {
+    //     if (connection.speaking === true) {
+    //         clearInterval(interval);
+    //         msg.edit("test success");
+    //         testVC.leave();
+    //         return func(["success", url], param);
+    //     }
+    //     if (tests > 10) {
+    //         clearInterval(interval);
+    //         msg.edit("test faile");
+    //         testVC.leave();
+    //         return func(["failed", url], param);
+    //     }
+    //     tests++;
+    // }, 1000);
 
 }
 //
@@ -550,7 +540,7 @@ bot.on('message', msg => {
                     break;
                 case 'test':
                     msg.channel.send("testing").then(message => {
-                        AddStreamLink("success",args[0],args[1],message);
+                        Test(args[0], message, console.log, args[1]);
                     })
                     break;
                 case 'cute':
@@ -637,6 +627,7 @@ bot.on('message', msg => {
                             .then(connection => { // Connection is an instance of VoiceConnection
                                 try {
                                     const dispatcher = connection.playArbitraryInput(streamLinks[musicType]);
+                                    dispatcher.on('error', err => { console.log(err.message) })
                                     return msg.reply(`Started playing ${musicType} stream...`);
                                 } catch (error) {
                                     return msg.reply(`Invalid music type. Available musictypes: ${Object.keys(streamLinks)}`);
