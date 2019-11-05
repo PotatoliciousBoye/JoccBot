@@ -611,11 +611,14 @@ bot.on('message', msg => {
                         }
                     }
                     else if (musicType === 'add') {
-                        if (typeof streamLinks[args[2]] !== 'undefined') {
-                            return msg.channel.send("Provided name already has a link saved under it.")
-                        }
                         if (typeof args[2] === 'undefined' || typeof link === 'undefined') {
                             return msg.channel.send("Please provide both a link and a name to use.");
+                        }
+                        if (Object.values(streamLinks).includes(link)){
+                            return msg.channel.send(`This link already exists under stream links database with name '${Object.keys(streamLinks).find(key => streamLinks[key] === link)}'.`)
+                        }
+                        if (typeof streamLinks[args[2]] !== 'undefined') {
+                            return msg.channel.send("Provided name already has a link saved under it.")
                         }
                         msg.channel.send("Validating the stream link...").then(message => {
                             TestLinkandExecute(link, message, AddStreamLink, args[2]);
