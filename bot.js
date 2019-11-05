@@ -322,6 +322,16 @@ async function AsyncForEach(array, callback) {
     }
 }
 
+
+//#region OptimizedYoutube
+async function BuildSongData(query,serverQueue) {
+    var playListCheck = /\b(list=)/i; var youtubeLinkCheck = /\b(youtube.com|youtu.be)/i; var soundcloudLinkCheck = /\b(soundcloud.com)/i;
+}
+function AddSongToQueue(song, serverQueue) {
+    serverQueue.songs.push(song);
+    console.log(serverQueue.songs);
+}
+//#endregion
 //#region PlayFromYoutube
 async function execute(message, serverQueue) {
     const args = message.content.split(' ');
