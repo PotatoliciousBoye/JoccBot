@@ -323,13 +323,42 @@ async function AsyncForEach(array, callback) {
 }
 
 
-//#region OptimizedYoutube
-async function BuildSongData(query,serverQueue) {
+//#region OptimizedMusicPlayer
+async function BuildSongData(query, serverQueue) {
     var playListCheck = /\b(list=)/i; var youtubeLinkCheck = /\b(youtube.com|youtu.be)/i; var soundcloudLinkCheck = /\b(soundcloud.com)/i;
+}
+function DisplayQueue(queue) {
+
+}
+function PlayPause(connection, message) {
+    if (typeof connection.dispatcher != 'undefined') {
+        if (connection.dispatcher.paused === true) {
+            connection.dispatcher.resume();
+            message.edit('resuming...');
+        }
+        else {
+            connection.dispatcher.pause();
+            message.edit('paused.');
+        }
+    }
+}
+function PauseCurrentPlayer(connection) {
+    if (typeof connection.dispatcher != 'undefined') {
+        connection.dispatcher.pause();
+    }
+}
+function ResumeCurrentPlayer(connection) {
+    console.log(connection.dispatcher.paused);
+    if (typeof connection.dispatcher != 'undefined' && connection.dispatcher.paused === true) {
+        connection.dispatcher.resume();
+    }
 }
 function AddSongToQueue(song, serverQueue) {
     serverQueue.songs.push(song);
     console.log(serverQueue.songs);
+}
+function PlaySong(song, connection) {
+    connection.playArbitraryInput(song);
 }
 //#endregion
 //#region PlayFromYoutube
@@ -354,7 +383,7 @@ async function execute(message, serverQueue) {
         youtubeSearch(search, opts, function (error, result) {
             searchResult = result[0];
         });
-        await sleep(600);
+        await sleep(1000);
         songID = searchResult.id;
         if (searchResult.kind === 'youtube#playlist') {
             isPlaylist = true;
@@ -490,30 +519,27 @@ function ReturnDelay(startTime) {
     return d.getTime() - startTime;
 }
 
-async function Test(url, msg, func, param) {
-    const testVC = bot.channels.get(auth.getTestId);
-    var connection = await testVC.join()
-    var isSuccess = false;
-    var tests = 0;
-    const dispatcher = connection.playArbitraryInput(url);
-    dispatcher.on('speaking', val => { if (val === true) { console.log("success"); isSuccess = true; testVC.leave() } });
-    dispatcher.on('end', () => { if (isSuccess === false) { console.log("failed"); testVC.leave() } });
-    // var interval = setInterval(() => {
-    //     if (connection.speaking === true) {
-    //         clearInterval(interval);
-    //         msg.edit("test success");
-    //         testVC.leave();
-    //         return func(["success", url], param);
-    //     }
-    //     if (tests > 10) {
-    //         clearInterval(interval);
-    //         msg.edit("test faile");
-    //         testVC.leave();
-    //         return func(["failed", url], param);
-    //     }
-    //     tests++;
-    // }, 1000);
+async function Test(message, serverQueue) {
+    var reactionArray = ['⏯'];
+    message.react('⏯');
+    const connection = typeof serverQueue !== 'undefined' ? serverQueue.connection : null;
+    if (connection === null) {
+        return;
+    }
 
+    const filter = (reaction, user) => true;
+    const collector = message.createReactionCollector(filter, {});
+    collector.on('collect', r => {
+        console.log(!reactionArray.includes(r.emoji.name));
+        if (!reactionArray.includes(r.emoji.name)) {
+            r.remove(r.users.last());
+        }
+        if (r.emoji.name === '⏯' && r.users.last() !== bot.user) {
+            r.remove(r.users.last());
+            message.edit('run playpause command');
+            PlayPause(connection, message)
+        }
+    });
 }
 //
 // Initialize Discord Bot
@@ -550,7 +576,7 @@ bot.on('message', msg => {
                     break;
                 case 'test':
                     msg.channel.send("testing").then(message => {
-                        Test(args[0], message, console.log, args[1]);
+                        Test(message,serverQueue);
                     })
                     break;
                 case 'cute':
@@ -624,7 +650,7 @@ bot.on('message', msg => {
                         if (typeof args[2] === 'undefined' || typeof link === 'undefined') {
                             return msg.channel.send("Please provide both a link and a name to use.");
                         }
-                        if (Object.values(streamLinks).includes(link)){
+                        if (Object.values(streamLinks).includes(link)) {
                             return msg.channel.send(`This link already exists under stream links database with name '${Object.keys(streamLinks).find(key => streamLinks[key] === link)}'.`)
                         }
                         if (typeof streamLinks[args[2]] !== 'undefined') {
@@ -664,6 +690,12 @@ bot.on('message', msg => {
                     break;
                 case 'stop':
                     stop(msg, serverQueue);
+                    break;
+                case 'pause':
+                    PauseCurrentPlayer(serverQueue.connection);
+                    break;
+                case 'resume':
+                    ResumeCurrentPlayer(serverQueue.connection);
                     break;
 
 
