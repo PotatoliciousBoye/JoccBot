@@ -325,7 +325,31 @@ async function AsyncForEach(array, callback) {
 
 //#region OptimizedMusicPlayer
 async function BuildSongData(query, serverQueue) {
-    var playListCheck = /\b(list=)/i; var youtubeLinkCheck = /\b(youtube.com|youtu.be)/i; var soundcloudLinkCheck = /\b(soundcloud.com)/i;
+    var playListCheck = /\b(list=)/i; var youtubeLinkCheck = /\b(youtube.com|youtu.be)/i; var soundcloudLinkCheck = /\b(soundcloud.com)/i; var soundStream;
+    if (youtubeLinkCheck.test(query)) {
+        const songInfo = await ytdl.getInfo(youtubeId);
+        const song = {
+            title: songInfo.title,
+            url: songInfo.video_url,
+            type: 'youtube'
+        };
+
+    }
+}
+async function BuildQueueConstructForGuild(message){
+    const queueContruct = {
+        textChannel: message.channel,
+        voiceChannel: voiceChannel,
+        connection: null,
+        songs: [],
+        volume: 5,
+        playing: true,
+    };
+
+    queue.set(message.guild.id, queueContruct);
+}
+function ParseYoutubeToReadable(url) {
+    return ytdl(song.url, { quality: "highestaudio", filter: "audioonly" });
 }
 function DisplayQueue(queue) {
 
@@ -520,6 +544,7 @@ function ReturnDelay(startTime) {
 }
 
 async function Test(message, serverQueue) {
+    console.log(await ytdl.getInfo('https://www.youtube.com/watch?v=3mUXwYx1CQs'))
     var reactionArray = ['⏯'];
     message.react('⏯');
     const connection = typeof serverQueue !== 'undefined' ? serverQueue.connection : null;
@@ -751,6 +776,9 @@ bot.on('message', msg => {
                 }
             })
             .catch(console.error);
+    }
+    if (msg.content === 'awoo') {
+        msg.reply('awoo!')
     }
 });
 
