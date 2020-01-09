@@ -26,6 +26,12 @@ const MusicQueryType =
     YoutubePlaylistURL: 3,
     Other:              -1
 }
+const SongType =
+{
+    Soundcloud:         0,
+    Youtube:            1,
+    Other:              -1
+}
 const Queue = new Map();
 const Bot = new Discord.Client();
 var CommandString, BotAuthor;
@@ -365,7 +371,7 @@ async function PushSongDataToQueue(query, serverQueue)
             return AddSongToQueue({
                 title: songInfo.title,
                 url: songInfo.video_url,
-                type: 'youtube'
+                type: SongType.Youtube
             });
 
         case MusicQueryType.YoutubeQuery:
@@ -373,32 +379,46 @@ async function PushSongDataToQueue(query, serverQueue)
     }
 }
 
+function ConnectToVoiceChat(voiceChannel,serverQueue)
+{
+    voiceChannel.join()
+        .then(connection => {
+            serverQueue.connection = connection;
+            serverQueue.voiceChannel = voiceChannel;
+        })
+    .catch(console.error(`Error when joining voice chat. \nfunc ConnectToVoiceChat \nparams \nvoiceChannel: ${voiceChannel} \nserverQueue : ${serverQueue}`))
+}
 
-
-async function BuildQueueConstructForGuild(message)
+function BuildQueueConstructForGuild(guildId,channel)
 {
     const queueContruct = {
-        textChannel: message.channel,
-        voiceChannel: voiceChannel,
+        textChannel: channel,
+        voiceChannel: null,
         connection: null,
+        currentSong: null,
         songs: [],
-        volume: 5,
-        playing: true,
+        volume: 10,
+        playing: false,
     };
 
-    Queue.set(message.guild.id, queueContruct);
+    Queue.set(guildId, queueContruct);
+
+    return queueContruct;
 }
-function ParseYoutubeToReadable(url) {
-    return Ytdl(song.url, { quality: "highestaudio", filter: "audioonly" });
-}
-function DisplayQueue(serverQueue) {
+
+async function ParseYoutubeToReadable(url)
+    return await Ytdl(song.url, { quality: "highestaudio", filter: "audioonly" });
+
+function DisplayQueue(serverQueue) 
+{
     if (serverQueue) {
         return serverQueue.songs;
     }
     throw `The queue list is empty, try adding a song to the queue first.`;
 }
 
-function PlayPause(connection, message) {
+function PlayPause(connection, message) 
+{
     if (typeof connection.dispatcher != 'undefined') {
         if (connection.dispatcher.paused === true) {
             connection.dispatcher.resume();
@@ -412,26 +432,62 @@ function PlayPause(connection, message) {
     throw `Music player is not connected to a voicechannel.`;
 }
 
-function PauseCurrentPlayer(connection) {
-    if (typeof connection.dispatcher != 'undefined') {
-        connection.dispatcher.pause();
+function PauseCurrentPlayer(serverQueue) 
+{
+    if (typeof serverQueue.connection.dispatcher != 'undefined') {
+        serverQueue.connection.dispatcher.pause();
+        serverQueue.playing = false;
     }
     throw `Music player is not connected to a voicechannel.`;
 }
-function ResumeCurrentPlayer(connection) {
-    console.log(connection.dispatcher.paused);
-    if (typeof connection.dispatcher != 'undefined' && connection.dispatcher.paused === true) {
-        connection.dispatcher.resume();
+function ResumeCurrentPlayer(serverQueue) 
+{
+    console.log(serverQueue.connection.dispatcher.paused);
+    if (typeof serverQueue.connection.dispatcher != 'undefined' && connection.dispatcher.paused === true) {
+        serverQueue.connection.dispatcher.resume();
+        serverQueue.playing = true;
     }
 }
-function AddSongToQueue(song, serverQueue) {
+function AddSongToQueue(song, serverQueue) 
+{
     serverQueue.songs.push(song);
     console.log(serverQueue.songs);
 }
-function PlaySong(song, connection) {
-    connection.playArbitraryInput(song);
+function PlaySongFromQueue(serverQueue) {
+    serverQueue.currentSong = serverQueue.songs[0];
+    var songStream;
+    switch (serverQueue.currentSong.type)
+    {
+        case SongType.Youtube:
+            songStream = ParseYoutubeToReadable(serverQueue.currentSong.url)
+    }
+    
+    serverQueue.connection.playArbitraryInput(songStream,{})
+    .on('end', () => {
+        serverQueue.songs.shift();
+        PlaySongFromQueue(serverQueue);
+    })
+    .on('error', err => {
+        throw `An error occured while trying to play a song from the queue. \nfunc PlaySongFromQueue, \nError : ${err} \nserverQueue : ${serverQueue}` 
+    });
+    serverQueue.playing = true;
 }
-function PlayCommand(message,serverQueue){
+function PlayCommand(message,serverQueue)
+{
+    if (!serverQueue)
+    {
+        serverQueue = BuildQueueConstructForGuild(message.guild.id,message.channel);
+        message.channel.send(`This text channel has been assigned as the music query channel.\n
+                            Music commands will only be accepted from this channel from now on.\n
+                            To set another channel, an administrator can use the command ${CommandString}resetMChannel on the text channel to input queries on.`);
+    }
+    else if (message.channel != serverQueue.textChannel) {
+        message.guild.channels.find('id',serverQueue.textChannel).name
+        throw `You are not in the music query channel! Current set channel is #${message.guild.channels.find('id',serverQueue.textChannel).name}`;
+    }
+
+    PushSongDataToQueue(message.content,serverQueue)
+
 
 }
 //#endregion
